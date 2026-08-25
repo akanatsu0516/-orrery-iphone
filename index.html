@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#02050a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ORRERY for iPhone</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div class="noise"></div>
+  <header class="top">
+    <div>
+      <div class="eyebrow">ORRERY / iPHONE EDITION</div>
+      <div id="date" class="date">AUG 26, 2026</div>
+    </div>
+    <div class="weather">
+      <span id="weatherIcon">◌</span>
+      <div><b id="temp">--°</b><small id="weatherText">LOADING</small></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="dial" id="dial">
+        <div class="orbit o1"></div><div class="orbit o2"></div><div class="orbit o3"></div>
+        <div class="nodes n1"></div><div class="nodes n2"></div><div class="nodes n3"></div>
+        <div class="core"><span>ORRERY</span><i></i></div>
+      </div>
+      <div class="time" id="time">08:26<span>00</span></div>
+      <div class="status"><span class="dot"></span><span id="status">SYSTEM READY</span></div>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <label>SYSTEM</label>
+        <div class="metric"><span>BATTERY</span><b id="battery">--%</b></div>
+        <div class="bar"><i id="batteryBar"></i></div>
+        <div class="metric"><span>DISPLAY</span><b>IPHONE</b></div>
+        <div class="metric"><span>NETWORK</span><b id="network">ONLINE</b></div>
+      </article>
+      <article class="panel market">
+        <label>MARKET / WATCH</label>
+        <div class="metric"><span>NIKKEI 225</span><b>LIVE</b></div>
+        <div class="spark"></div>
+        <div class="metric"><span>USD / JPY</span><b>LIVE</b></div>
+      </article>
+    </section>
+
+    <section class="audio-panel">
+      <div class="audio-head"><label>AUDIO REACTOR</label><span id="micState">IDLE</span></div>
+      <canvas id="viz"></canvas>
+      <button id="micBtn" class="reactor-btn"><span>◉</span> TAP TO ACTIVATE</button>
+    </section>
+  </main>
+
+  <nav class="dock">
+    <button class="active" data-mode="live">◉<small>LIVE</small></button>
+    <button data-mode="minimal">◇<small>MINIMAL</small></button>
+    <button data-mode="ambient">✦<small>AMBIENT</small></button>
+    <button id="settingsBtn">⚙<small>CONFIG</small></button>
+  </nav>
+
+  <dialog id="settings">
+    <div class="dialog-head"><b>ORRERY CONFIG</b><button id="closeSettings">×</button></div>
+    <label>THEME</label>
+    <div class="themes">
+      <button data-theme="cyan"></button><button data-theme="violet"></button>
+      <button data-theme="ember"></button><button data-theme="matrix"></button>
+    </div>
+    <label>LOCATION</label>
+    <input id="city" value="Fukuoka">
+    <button id="save" class="save">SAVE CONFIG</button>
+  </dialog>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

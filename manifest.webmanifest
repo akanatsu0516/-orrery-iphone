@@ -1,0 +1,10 @@
+{
+  "name":"ORRERY for iPhone",
+  "short_name":"ORRERY",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#02050a",
+  "theme_color":"#02050a",
+  "orientation":"portrait",
+  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

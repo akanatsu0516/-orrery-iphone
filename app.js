@@ -24,6 +24,9 @@ if(navigator.getBattery){
   const update=()=>{$("#battery").textContent=Math.round(b.level*100)+"%";$("#batteryBar").style.width=(b.level*100)+"%";};
   update(); b.addEventListener("levelchange",update);
  });
+} else {
+ $("#battery").textContent="iOS";
+ $("#batteryBar").style.width="42%";
 }
 $("#network").textContent=navigator.onLine?"ONLINE":"OFFLINE";
 addEventListener("online",()=>$("#network").textContent="ONLINE");
@@ -34,13 +37,29 @@ function resize(){canvas.width=canvas.clientWidth*devicePixelRatio;canvas.height
 addEventListener("resize",resize);resize();
 function draw(){
  const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);
- if(analyser){analyser.getByteFrequencyData(data);let sum=data.reduce((a,b)=>a+b,0)/data.length;dial.style.transform=`scale(${1+sum/2550})`;statusEl.textContent=sum>18?"AUDIO ACTIVE":"SYSTEM READY";$("#micState").textContent=sum>18?"LISTENING":"LIVE";
-  ctx.beginPath();ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--accent");ctx.lineWidth=2*devicePixelRatio;
-  for(let i=0;i<data.length;i+=3){let x=i/data.length*w,y=h/2-(data[i]/255)*h*.42;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke();
- } else {
-  const t=Date.now()/500;ctx.beginPath();ctx.strokeStyle="rgba(84,221,255,.45)";ctx.lineWidth=1*devicePixelRatio;
-  for(let x=0;x<w;x+=4){let y=h/2+Math.sin(x/55+t)*3; if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke();
- }
+ if(analyser){
+  analyser.getByteFrequencyData(data);
+  const sum=data.reduce((a,b)=>a+b,0)/data.length;
+  const energy=Math.min(1,sum/72);
+  dial.style.transform=`scale(${1+energy*.045}) rotate(${Math.sin(Date.now()/900)*energy*.8}deg)`;
+  document.body.classList.toggle("reactor-hot",energy>.18);
+  statusEl.textContent=sum>18?"AUDIO ACTIVE":"SYSTEM READY";
+  $("#micState").textContent=sum>18?"LISTENING":"LIVE";
+  const accent=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+  ctx.beginPath();ctx.strokeStyle=accent;ctx.lineWidth=2*devicePixelRatio;
+  for(let i=0;i<data.length;i+=2){
+    const x=i/data.length*w;
+    const amp=(data[i]/255)*h*.72;
+    const y=h/2-Math.max(2,amp)*Math.sin(i*.35+Date.now()/180)*.42;
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)
+  }
+  ctx.stroke();
+  ctx.beginPath();ctx.strokeStyle="rgba(255,255,255,.22)";ctx.lineWidth=devicePixelRatio;
+  ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();
+} else {
+  const t=Date.now()/650;ctx.beginPath();ctx.strokeStyle="rgba(84,221,255,.45)";ctx.lineWidth=1.2*devicePixelRatio;
+  for(let x=0;x<w;x+=4){let y=h/2+Math.sin(x/38+t)*4+Math.sin(x/11+t*.7)*1.5;if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke();
+}
  raf=requestAnimationFrame(draw);
 }draw();
 

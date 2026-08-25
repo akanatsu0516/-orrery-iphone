@@ -18,3 +18,26 @@ dialog{width:min(90vw,430px);background:#071018;color:var(--text);border:1px sol
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{50%{transform:scale(1.8);opacity:.55}}
 body.minimal .grid,body.minimal .audio-panel{display:none}body.minimal .hero{height:calc(100vh - 170px)}body.ambient .grid{display:none}body.ambient .audio-panel{opacity:.55}body.ambient .hero{height:calc(100vh - 150px)}
 @media(min-width:650px){.hero{height:500px}.dial{width:430px;height:430px}}
+
+/* ===== ORRERY v2 visual layer ===== */
+.hero{height:470px}
+.dial{transition:transform .08s linear;will-change:transform}
+.dial:after{content:"";position:absolute;inset:2%;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 22%,rgba(84,221,255,.55) 23%,transparent 24% 54%,rgba(141,108,255,.45) 55%,transparent 56% 78%,rgba(255,255,255,.35) 79%,transparent 80%);filter:blur(.2px);mask:radial-gradient(circle,transparent 0 55%,#000 56% 57%,transparent 58%);animation:spin 7s linear infinite}
+.core span{font-size:10px;letter-spacing:.48em}
+.core:before{animation:spin 4s linear infinite}
+.core:after{animation:spin 6s linear reverse infinite}
+.time{position:absolute;top:44px;margin:0;font-size:34px;letter-spacing:.1em}
+.time span{font-size:11px}
+.status{position:absolute;top:88px;margin:0}
+.audio-panel{position:relative;overflow:hidden}
+.audio-panel:before{content:"";position:absolute;inset:auto -20% -55px;height:120px;background:radial-gradient(ellipse,rgba(84,221,255,.12),transparent 65%);pointer-events:none}
+#viz{height:105px}
+.reactor-btn{position:relative;z-index:2}
+.panel{min-height:138px}
+.metric b{font-variant-numeric:tabular-nums}
+body.reactor-hot .dial{filter:drop-shadow(0 0 28px rgba(84,221,255,.45))}
+body.reactor-hot .core{box-shadow:inset 0 0 35px rgba(84,221,255,.35),0 0 55px rgba(84,221,255,.3)}
+body.reactor-hot .core i{box-shadow:0 0 25px 9px var(--accent)}
+@media(max-height:760px){.hero{height:400px}.time{top:34px}.status{top:76px}}
+
+.v2{color:var(--accent);font-size:8px;margin-left:6px}.hint{text-align:center;color:#49616b;font-size:7px;letter-spacing:.16em;margin-top:8px}

@@ -1,19 +1,977 @@
-const $=s=>document.querySelector(s);
-const S={endpoint:localStorage.getItem("orreryEndpoint")||"",rec:null,listening:false,busy:false,visualStarted:false};
-function tick(){const d=new Date();$("#clock").textContent=d.toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit",hour12:false});$("#date").textContent=d.toLocaleDateString("en-US",{month:"short",day:"2-digit",year:"numeric"}).toUpperCase()}setInterval(tick,300);tick();
-async function weather(){try{const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&current=temperature_2m,relative_humidity_2m,weather_code&timezone=Asia%2FTokyo"),j=await r.json(),c=j.current.weather_code,t=Math.round(j.current.temperature_2m),i=c===0?"☼":c<60?"☁":"◌",d=c===0?"CLEAR":c<60?"CLOUDY":"PRECIP";$("#temp").textContent=t+"°";$("#weatherIcon").textContent=i;$("#weatherText").textContent=d;$("#wTemp").textContent=t+"°";$("#wDesc").textContent=d;$("#humidity").textContent=j.current.relative_humidity_2m+"%"}catch(e){$("#weatherText").textContent="OFFLINE"}}weather();
-function state(a,b){$("#listenLabel").textContent=a;$("#subLabel").textContent=b;$("#mode").textContent=a;$("#talkState").textContent=a==="STANDBY"?"PRESS TO TALK":"AI "+a;$("#systemState").textContent=a==="STANDBY"?"● ONLINE":"● "+a;$("#audioState").textContent=a==="STANDBY"?"IDLE":a;$("#voiceStatus").textContent=a==="STANDBY"?"READY":a;$("#activityText").textContent=a}
-function msg(w,t){const e=document.createElement("div");e.className="msg "+w;e.innerHTML='<b>'+(w==="ai"?"O":"Y")+'</b><div><small>'+(w==="ai"?"ORRERY":"YOU")+'</small><p></p></div>';e.querySelector("p").textContent=t;$("#messages").appendChild(e);$("#messages").scrollTop=99999}
-function speak(t){if(!("speechSynthesis"in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="ja-JP";u.rate=.98;u.onstart=()=>state("SPEAKING","AI VOICE OUTPUT");u.onend=()=>state("STANDBY","PRESS TO TALK");speechSynthesis.speak(u)}
-function local(t){if(/天気|気温|福岡/.test(t))return"福岡の現在の天気は画面に表示しています。AIリンクを接続すると、詳しい予報も会話できます。";if(/時間/.test(t))return"現在時刻は"+$("#clock").textContent+"です。";if(/自己紹介/.test(t))return"私はORRERY。あなたのiPhone上で動くAIアシスタントです。";if(/こんにちは|こんばんは|おはよう/.test(t))return"こんにちは。ORRERYはオンラインです。";return"現在はローカル会話モードです。LINK設定からAIバックエンドを接続すると、自由会話ができます。"}
-async function ask(t){if(!t||S.busy)return;S.busy=true;$("#preview").textContent=t;msg("user",t);state("PROCESSING","ORRERY AI IS THINKING");let a="";try{if(S.endpoint){const r=await fetch(S.endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:t})});if(!r.ok)throw Error(r.status);const j=await r.json();a=j.reply||j.output||j.message||"応答を取得できませんでした。"}else a=local(t)}catch(e){a="AIリンクに接続できませんでした。LINK設定のURLを確認してください。"}msg("ai",a);S.busy=false;speak(a)}
-function setupSpeech(){const C=window.SpeechRecognition||window.webkitSpeechRecognition;if(!C)return null;const r=new C;r.lang="ja-JP";r.continuous=false;r.interimResults=true;r.onstart=()=>{S.listening=true;$("#mic").classList.add("active");state("LISTENING","お話しください");visual()};r.onresult=e=>{let f="";for(let i=e.resultIndex;i<e.results.length;i++){const x=e.results[i][0].transcript;$("#preview").textContent=x;if(e.results[i].isFinal)f+=x}if(f)ask(f)};r.onerror=()=>{S.listening=false;$("#mic").classList.remove("active");state("STANDBY","マイクを確認してください")};r.onend=()=>{S.listening=false;$("#mic").classList.remove("active");if(!S.busy)state("STANDBY","PRESS TO TALK")};return r}S.rec=setupSpeech();
-function visual(){if(S.visualStarted)return;S.visualStarted=true;const c=$("#viz"),x=c.getContext("2d");function resize(){c.width=c.clientWidth*devicePixelRatio;c.height=c.clientHeight*devicePixelRatio}resize();addEventListener("resize",resize);function draw(){const w=c.width,h=c.height;x.clearRect(0,0,w,h);x.beginPath();x.strokeStyle="#5ceaff";x.lineWidth=2*devicePixelRatio;const active=S.listening||speechSynthesis.speaking;for(let p=0;p<w;p+=4){const y=h/2+(active?Math.sin(p/16+Date.now()/80)*14+Math.sin(p/6+Date.now()/130)*5:Math.sin(p/28+Date.now()/500)*2);p?x.lineTo(p,y):x.moveTo(p,y)}x.stroke();$("#core").style.transform=active?`scale(${1+Math.sin(Date.now()/100)*.018})`:"scale(1)";requestAnimationFrame(draw)}draw()}
-$("#mic").onclick=()=>{if(!S.rec){ask($("#preview").textContent);return}if(S.listening)S.rec.stop();else S.rec.start()};
-$("#send").onclick=()=>{const t=$("#preview").textContent.trim();if(t&&t!=="オレリーに話しかけてください")ask(t)};
-document.querySelectorAll(".quick button").forEach(b=>b.onclick=()=>ask(b.dataset.prompt));
-$("#config").onclick=()=>{$("#endpoint").value=S.endpoint;$("#settings").showModal()};
-$("#close").onclick=()=>$("#settings").close();
-$("#save").onclick=()=>{S.endpoint=$("#endpoint").value.trim();localStorage.setItem("orreryEndpoint",S.endpoint);$("#aiLink").textContent=S.endpoint?"SECURE":"LOCAL";$("#settings").close();msg("ai",S.endpoint?"AIセキュアリンクを設定しました。":"ローカルモードに戻しました。")};
-$("#clear").onclick=()=>{$("#messages").innerHTML="";msg("ai","セッションをリセットしました。システムオンライン。")};
-$("#network").textContent=navigator.onLine?"ONLINE":"OFFLINE";addEventListener("online",()=>$("#network").textContent="ONLINE");addEventListener("offline",()=>$("#network").textContent="OFFLINE");if(S.endpoint)$("#aiLink").textContent="SECURE";state("STANDBY","PRESS TO TALK");visual();
+const $ = s => document.querySelector(s);
+
+const S = {
+  endpoint: localStorage.getItem("orreryEndpoint") || "",
+  rec: null,
+  listening: false,
+  busy: false,
+  visualStarted: false,
+  history: [],
+  speechUnlocked: false
+};
+
+/* =========================
+   CLOCK
+========================= */
+function tick() {
+  const d = new Date();
+
+  const clock = $("#clock");
+  const date = $("#date");
+
+  if (clock) {
+    clock.textContent = d.toLocaleTimeString("ja-JP", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    });
+  }
+
+  if (date) {
+    date.textContent = d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric"
+    }).toUpperCase();
+  }
+}
+
+setInterval(tick, 300);
+tick();
+
+
+/* =========================
+   WEATHER
+========================= */
+async function weather() {
+  try {
+    const r = await fetch(
+      "https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&current=temperature_2m,relative_humidity_2m,weather_code&timezone=Asia%2FTokyo"
+    );
+
+    const j = await r.json();
+
+    const c = j.current.weather_code;
+    const t = Math.round(j.current.temperature_2m);
+
+    const icon =
+      c === 0 ? "☼" :
+      c < 60 ? "☁" :
+      "◌";
+
+    const desc =
+      c === 0 ? "CLEAR" :
+      c < 60 ? "CLOUDY" :
+      "PRECIP";
+
+    if ($("#temp")) $("#temp").textContent = `${t}°`;
+    if ($("#weatherIcon")) $("#weatherIcon").textContent = icon;
+    if ($("#weatherText")) $("#weatherText").textContent = desc;
+
+    if ($("#wTemp")) $("#wTemp").textContent = `${t}°`;
+    if ($("#wDesc")) $("#wDesc").textContent = desc;
+    if ($("#humidity")) {
+      $("#humidity").textContent =
+        `${j.current.relative_humidity_2m}%`;
+    }
+
+  } catch (e) {
+    if ($("#weatherText")) $("#weatherText").textContent = "OFFLINE";
+    if ($("#wDesc")) $("#wDesc").textContent = "OFFLINE";
+  }
+}
+
+weather();
+
+
+/* =========================
+   SYSTEM STATE
+========================= */
+function state(main, sub) {
+
+  if ($("#listenLabel"))
+    $("#listenLabel").textContent = main;
+
+  if ($("#subLabel"))
+    $("#subLabel").textContent = sub;
+
+  if ($("#mode"))
+    $("#mode").textContent = main;
+
+  if ($("#talkState")) {
+    $("#talkState").textContent =
+      main === "STANDBY"
+        ? "PRESS TO TALK"
+        : `AI ${main}`;
+  }
+
+  if ($("#systemState")) {
+    $("#systemState").textContent =
+      main === "STANDBY"
+        ? "● ONLINE"
+        : `● ${main}`;
+  }
+
+  if ($("#audioState")) {
+    $("#audioState").textContent =
+      main === "STANDBY"
+        ? "IDLE"
+        : main;
+  }
+
+  if ($("#voiceStatus")) {
+    $("#voiceStatus").textContent =
+      main === "STANDBY"
+        ? "READY"
+        : main;
+  }
+
+  if ($("#activityText"))
+    $("#activityText").textContent = main;
+}
+
+
+/* =========================
+   CHAT DISPLAY
+========================= */
+function msg(who, text) {
+
+  const box = $("#messages");
+
+  if (!box) return;
+
+  const e = document.createElement("div");
+
+  e.className = `msg ${who}`;
+
+  e.innerHTML =
+    `<b>${who === "ai" ? "O" : "Y"}</b>` +
+    `<div>` +
+    `<small>${who === "ai" ? "ORRERY" : "YOU"}</small>` +
+    `<p></p>` +
+    `</div>`;
+
+  e.querySelector("p").textContent = text;
+
+  box.appendChild(e);
+
+  box.scrollTop = box.scrollHeight;
+}
+
+
+/* =========================
+   PREVIEW
+========================= */
+function preview(text) {
+
+  const el = $("#preview");
+
+  if (el)
+    el.textContent = text;
+}
+
+
+/* =========================
+   IOS SPEECH UNLOCK
+========================= */
+function unlockSpeech() {
+
+  if (
+    !("speechSynthesis" in window) ||
+    S.speechUnlocked
+  ) return;
+
+  try {
+
+    speechSynthesis.cancel();
+
+    const u =
+      new SpeechSynthesisUtterance("");
+
+    u.lang = "ja-JP";
+    u.volume = 0;
+
+    speechSynthesis.speak(u);
+
+    S.speechUnlocked = true;
+
+  } catch (e) {}
+}
+
+
+/* =========================
+   JAPANESE VOICE
+========================= */
+function japaneseVoice() {
+
+  if (!("speechSynthesis" in window))
+    return null;
+
+  const voices =
+    speechSynthesis.getVoices();
+
+  return (
+    voices.find(v =>
+      /^ja(-|_)/i.test(v.lang)
+    ) ||
+    voices.find(v =>
+      /japanese|日本語/i.test(v.name)
+    ) ||
+    null
+  );
+}
+
+
+/* =========================
+   SPEAK
+========================= */
+function speak(text) {
+
+  if (
+    !("speechSynthesis" in window) ||
+    !text
+  ) return;
+
+  speechSynthesis.cancel();
+
+  const u =
+    new SpeechSynthesisUtterance(text);
+
+  u.lang = "ja-JP";
+  u.rate = 0.98;
+  u.pitch = 1;
+  u.volume = 1;
+
+  const voice = japaneseVoice();
+
+  if (voice)
+    u.voice = voice;
+
+  u.onstart = () => {
+    state(
+      "SPEAKING",
+      "AI VOICE OUTPUT"
+    );
+  };
+
+  u.onend = () => {
+    state(
+      "STANDBY",
+      "「オレリー」と話しかけてください"
+    );
+  };
+
+  u.onerror = () => {
+    state(
+      "STANDBY",
+      "音声出力を確認してください"
+    );
+  };
+
+  speechSynthesis.speak(u);
+}
+
+
+/* =========================
+   LOCAL AI
+========================= */
+function localAI(text) {
+
+  if (/天気|気温|福岡/.test(text)) {
+
+    return "福岡の現在の天気は画面に表示しています。AIリンクを接続すると、もっと詳しくお話しできます。";
+  }
+
+  if (/時間|何時/.test(text)) {
+
+    return `現在時刻は${$("#clock")?.textContent || ""}です。`;
+  }
+
+  if (/自己紹介|名前|誰/.test(text)) {
+
+    return "私はORRERY。あなたのiPhone上で動くAIアシスタントです。";
+  }
+
+  if (/こんにちは|こんばんは|おはよう/.test(text)) {
+
+    return "こんにちは。ORRERYはオンラインです。";
+  }
+
+  if (/ありがとう|ありがと/.test(text)) {
+
+    return "どういたしまして。いつでも話しかけてください。";
+  }
+
+  if (/元気|調子/.test(text)) {
+
+    return "システムは正常です。いつでも話しかけてください。";
+  }
+
+  return "現在はローカル会話モードです。AIバックエンドを接続すると、自由に会話できます。";
+}
+
+
+/* =========================
+   AI REQUEST
+========================= */
+async function ask(text) {
+
+  const t = String(text || "").trim();
+
+  if (!t || S.busy)
+    return;
+
+  S.busy = true;
+
+  preview(t);
+
+  msg("user", t);
+
+  state(
+    "PROCESSING",
+    "ORRERY AI IS THINKING"
+  );
+
+  let answer = "";
+
+  try {
+
+    if (S.endpoint) {
+
+      const response =
+        await fetch(
+          S.endpoint,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body: JSON.stringify({
+              message: t,
+              history:
+                S.history.slice(-12)
+            })
+          }
+        );
+
+      if (!response.ok)
+        throw new Error(
+          `HTTP ${response.status}`
+        );
+
+      const data =
+        await response.json();
+
+      answer =
+        data.reply ||
+        data.output ||
+        data.message ||
+        data.output_text ||
+        "";
+
+      if (!answer)
+        throw new Error(
+          "EMPTY_RESPONSE"
+        );
+
+    } else {
+
+      answer = localAI(t);
+
+    }
+
+  } catch (e) {
+
+    console.error(
+      "ORRERY AI ERROR",
+      e
+    );
+
+    answer =
+      "AIリンクに接続できませんでした。LINK設定のURLを確認してください。";
+  }
+
+  S.history.push({
+    role: "user",
+    content: t
+  });
+
+  S.history.push({
+    role: "assistant",
+    content: answer
+  });
+
+  /* AIの返答を必ず画面に表示 */
+  msg("ai", answer);
+
+  /* 表示バグ修正 */
+  preview(answer);
+
+  S.busy = false;
+
+  /* AIの返答を音声出力 */
+  unlockSpeech();
+
+  speak(answer);
+}
+
+
+/* =========================
+   SPEECH RECOGNITION
+========================= */
+function setupSpeech() {
+
+  const Recognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+  if (!Recognition) {
+
+    state(
+      "STANDBY",
+      "このiPhoneでは音声認識を利用できません"
+    );
+
+    return null;
+  }
+
+  const r =
+    new Recognition();
+
+  r.lang = "ja-JP";
+
+  r.continuous = false;
+
+  r.interimResults = true;
+
+  r.maxAlternatives = 3;
+
+
+  /* START */
+
+  r.onstart = () => {
+
+    S.listening = true;
+
+    $("#mic")?.classList.add("active");
+
+    state(
+      "LISTENING",
+      "お話しください"
+    );
+
+    preview(
+      "聞き取っています…"
+    );
+
+    visual();
+  };
+
+
+  /* RESULT */
+
+  r.onresult = e => {
+
+    let interim = "";
+
+    let finalText = "";
+
+    for (
+      let i = e.resultIndex;
+      i < e.results.length;
+      i++
+    ) {
+
+      const result =
+        e.results[i];
+
+      const transcript =
+        result[0]?.transcript || "";
+
+      if (result.isFinal) {
+
+        finalText += transcript;
+
+      } else {
+
+        interim += transcript;
+      }
+    }
+
+
+    /* 認識途中 */
+
+    if (interim) {
+
+      preview(interim);
+    }
+
+
+    /* 認識確定 */
+
+    if (finalText.trim()) {
+
+      const clean =
+        finalText.trim();
+
+      preview(clean);
+
+      setTimeout(
+        () => ask(clean),
+        100
+      );
+    }
+  };
+
+
+  /* ERROR */
+
+  r.onerror = e => {
+
+    console.warn(
+      "SpeechRecognition:",
+      e.error
+    );
+
+    S.listening = false;
+
+    $("#mic")
+      ?.classList
+      .remove("active");
+
+    let message =
+      "音声認識を確認してください。";
+
+    if (e.error === "not-allowed") {
+
+      message =
+        "マイクの使用を許可してください。";
+    }
+
+    if (e.error === "no-speech") {
+
+      message =
+        "聞き取れませんでした。もう一度話してください。";
+    }
+
+    if (e.error === "network") {
+
+      message =
+        "音声認識の通信を確認してください。";
+    }
+
+    state(
+      "STANDBY",
+      message
+    );
+
+    preview(message);
+  };
+
+
+  /* END */
+
+  r.onend = () => {
+
+    S.listening = false;
+
+    $("#mic")
+      ?.classList
+      .remove("active");
+
+    if (!S.busy) {
+
+      state(
+        "STANDBY",
+        "「オレリー」と話しかけてください"
+      );
+    }
+  };
+
+
+  return r;
+}
+
+
+S.rec = setupSpeech();
+
+
+/* =========================
+   START MICROPHONE
+========================= */
+function startListening() {
+
+  unlockSpeech();
+
+  if (!S.rec) {
+
+    state(
+      "STANDBY",
+      "音声認識が利用できません"
+    );
+
+    return;
+  }
+
+  if (S.listening) {
+
+    try {
+      S.rec.stop();
+    } catch (e) {}
+
+    return;
+  }
+
+  try {
+
+    S.rec.start();
+
+  } catch (e) {
+
+    console.warn(
+      "Speech start error:",
+      e
+    );
+
+    try {
+
+      S.rec.abort();
+
+      setTimeout(
+        () => S.rec.start(),
+        250
+      );
+
+    } catch (e2) {}
+  }
+}
+
+
+/* =========================
+   VISUALIZER
+========================= */
+function visual() {
+
+  if (S.visualStarted)
+    return;
+
+  S.visualStarted = true;
+
+  const canvas = $("#viz");
+
+  if (!canvas)
+    return;
+
+  const ctx =
+    canvas.getContext("2d");
+
+
+  function resize() {
+
+    const dpr =
+      Math.max(
+        1,
+        window.devicePixelRatio || 1
+      );
+
+    canvas.width =
+      canvas.clientWidth * dpr;
+
+    canvas.height =
+      canvas.clientHeight * dpr;
+  }
+
+  resize();
+
+  addEventListener(
+    "resize",
+    resize
+  );
+
+
+  function draw() {
+
+    const w = canvas.width;
+
+    const h = canvas.height;
+
+    ctx.clearRect(
+      0,
+      0,
+      w,
+      h
+    );
+
+    ctx.beginPath();
+
+    ctx.strokeStyle =
+      "#5ceaff";
+
+    ctx.lineWidth =
+      2 *
+      (window.devicePixelRatio || 1);
+
+    const active =
+      S.listening ||
+      (
+        "speechSynthesis" in window &&
+        speechSynthesis.speaking
+      );
+
+
+    for (
+      let p = 0;
+      p < w;
+      p += 4
+    ) {
+
+      const y =
+        h / 2 +
+        (
+          active
+            ? Math.sin(
+                p / 16 +
+                Date.now() / 80
+              ) * 14 +
+              Math.sin(
+                p / 6 +
+                Date.now() / 130
+              ) * 5
+            : Math.sin(
+                p / 28 +
+                Date.now() / 500
+              ) * 2
+        );
+
+      if (p)
+        ctx.lineTo(p, y);
+      else
+        ctx.moveTo(p, y);
+    }
+
+    ctx.stroke();
+
+
+    const core =
+      $("#core");
+
+    if (core) {
+
+      core.style.transform =
+        active
+          ? `scale(${
+              1 +
+              Math.sin(
+                Date.now() / 100
+              ) * 0.018
+            })`
+          : "scale(1)";
+    }
+
+
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+}
+
+
+/* =========================
+   BUTTONS
+========================= */
+
+$("#mic")?.addEventListener(
+  "click",
+  startListening
+);
+
+
+$("#send")?.addEventListener(
+  "click",
+  () => {
+
+    const text =
+      $("#preview")
+        ?.textContent
+        .trim() || "";
+
+    if (
+      text &&
+      text !==
+        "オレリーに話しかけてください" &&
+      !text.includes(
+        "聞き取っています"
+      )
+    ) {
+
+      unlockSpeech();
+
+      ask(text);
+    }
+  }
+);
+
+
+/* QUICK COMMANDS */
+
+document
+  .querySelectorAll(".quick button")
+  .forEach(button => {
+
+    button.addEventListener(
+      "click",
+      () =>
+        ask(
+          button.dataset.prompt
+        )
+    );
+  });
+
+
+/* =========================
+   AI LINK SETTINGS
+========================= */
+
+$("#config")?.addEventListener(
+  "click",
+  () => {
+
+    $("#endpoint").value =
+      S.endpoint;
+
+    $("#settings").showModal();
+  }
+);
+
+
+$("#close")?.addEventListener(
+  "click",
+  () =>
+    $("#settings").close()
+);
+
+
+$("#save")?.addEventListener(
+  "click",
+  () => {
+
+    S.endpoint =
+      $("#endpoint")
+        .value
+        .trim();
+
+    localStorage.setItem(
+      "orreryEndpoint",
+      S.endpoint
+    );
+
+    if ($("#aiLink")) {
+
+      $("#aiLink").textContent =
+        S.endpoint
+          ? "SECURE"
+          : "LOCAL";
+    }
+
+    $("#settings").close();
+
+    msg(
+      "ai",
+      S.endpoint
+        ? "AIセキュアリンクを設定しました。"
+        : "ローカルモードに戻しました。"
+    );
+  }
+);
+
+
+/* =========================
+   RESET
+========================= */
+
+$("#clear")?.addEventListener(
+  "click",
+  () => {
+
+    S.history = [];
+
+    if ($("#messages"))
+      $("#messages").innerHTML = "";
+
+    msg(
+      "ai",
+      "セッションをリセットしました。システムオンライン。"
+    );
+
+    preview(
+      "オレリーに話しかけてください"
+    );
+  }
+);
+
+
+/* =========================
+   NETWORK
+========================= */
+
+if ($("#network")) {
+
+  $("#network").textContent =
+    navigator.onLine
+      ? "ONLINE"
+      : "OFFLINE";
+}
+
+addEventListener(
+  "online",
+  () => {
+
+    if ($("#network"))
+      $("#network").textContent =
+        "ONLINE";
+  }
+);
+
+addEventListener(
+  "offline",
+  () => {
+
+    if ($("#network"))
+      $("#network").textContent =
+        "OFFLINE";
+  }
+);
+
+
+/* =========================
+   VOICES
+========================= */
+
+if (
+  "speechSynthesis" in window
+) {
+
+  speechSynthesis.onvoiceschanged =
+    () => {};
+}
+
+
+/* =========================
+   INIT
+========================= */
+
+if (S.endpoint && $("#aiLink")) {
+
+  $("#aiLink").textContent =
+    "SECURE";
+}
+
+state(
+  "STANDBY",
+  "「オレリー」と話しかけてください"
+);
+
+visual();

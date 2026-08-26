@@ -92,3 +92,171 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
  .reactor{display:none}
  .talkbar{margin-top:3px}
 }
+/* ORRERY iPhone FINAL FIX */
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden !important;
+}
+
+body {
+  padding: 0 !important;
+}
+
+#app {
+  width: 100%;
+  height: 100dvh;
+  min-height: 0 !important;
+  max-width: 700px;
+  margin: 0 auto;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+}
+
+main {
+  flex: 1;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
+  gap: 0;
+}
+
+.hero {
+  min-height: 0 !important;
+  height: auto !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.heroLabel {
+  flex: none;
+  padding: 4px 7px;
+}
+
+.coreWrap {
+  flex: 1;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.core {
+  width: min(55vw, 260px);
+  height: min(55vw, 260px);
+}
+
+.coreState {
+  bottom: 1px;
+}
+
+.coreState b {
+  font-size: 10px;
+}
+
+.coreState small {
+  font-size: 6px;
+  margin-top: 3px;
+}
+
+.cards {
+  flex: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.card {
+  min-height: 0;
+  height: 70px;
+  padding: 8px;
+}
+
+.system {
+  height: 58px;
+  min-height: 58px;
+}
+
+.command {
+  display: none !important;
+}
+
+.reactor {
+  display: block !important;
+  flex: none;
+  height: 44px;
+  min-height: 44px;
+  margin-top: 5px;
+  padding: 6px;
+}
+
+#viz {
+  height: 18px;
+}
+
+.talkbar {
+  display: grid !important;
+  position: relative !important;
+  flex: none;
+  width: 100%;
+  height: 58px;
+  min-height: 58px;
+  margin-top: 5px;
+  padding: 6px;
+  box-sizing: border-box;
+  z-index: 100;
+}
+
+.dock,
+.quick {
+  display: none !important;
+}
+
+@media (max-height: 760px) {
+  .topbar {
+    height: 52px;
+  }
+
+  .topTime {
+    font-size: 30px;
+  }
+
+  .core {
+    width: min(49vw, 220px);
+    height: min(49vw, 220px);
+  }
+
+  .cards .card {
+    height: 64px;
+    padding: 7px;
+  }
+
+  .system {
+    height: 52px;
+    min-height: 52px;
+  }
+
+  .reactor {
+    display: block !important;
+    height: 40px;
+    min-height: 40px;
+  }
+
+  #viz {
+    height: 14px;
+  }
+
+  .talkbar {
+    height: 54px;
+    min-height: 54px;
+  }
+}

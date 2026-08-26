@@ -1,7 +1,7 @@
 const $ = s => document.querySelector(s);
 
 const S = {
-  endpoint: localStorage.getItem("orreryEndpoint") || "",
+    endpoint: "https://orrery-ai.akanatsu0516.workers.dev",
   rec: null,
   listening: false,
   busy: false,

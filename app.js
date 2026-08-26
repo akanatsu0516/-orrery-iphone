@@ -1,18 +1,21 @@
 const $ = s => document.querySelector(s);
 
 const S = {
-    endpoint: "https://orrery-ai.akanatsu0516.workers.dev",
+  endpoint: "https://orrery-ai.akanatsu0516.workers.dev",
   rec: null,
   listening: false,
   busy: false,
   visualStarted: false,
   history: [],
-  speechUnlocked: false
+  speechUnlocked: false,
+  finalReceived: false
 };
+
 
 /* =========================
    CLOCK
 ========================= */
+
 function tick() {
   const d = new Date();
 
@@ -28,11 +31,13 @@ function tick() {
   }
 
   if (date) {
-    date.textContent = d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric"
-    }).toUpperCase();
+    date.textContent = d
+      .toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric"
+      })
+      .toUpperCase();
   }
 }
 
@@ -43,41 +48,74 @@ tick();
 /* =========================
    WEATHER
 ========================= */
+
 async function weather() {
   try {
-    const r = await fetch(
+    const response = await fetch(
       "https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&current=temperature_2m,relative_humidity_2m,weather_code&timezone=Asia%2FTokyo"
     );
 
-    const j = await r.json();
-
-    const c = j.current.weather_code;
-    const t = Math.round(j.current.temperature_2m);
-
-    const icon =
-      c === 0 ? "☼" :
-      c < 60 ? "☁" :
-      "◌";
-
-    const desc =
-      c === 0 ? "CLEAR" :
-      c < 60 ? "CLOUDY" :
-      "PRECIP";
-
-    if ($("#temp")) $("#temp").textContent = `${t}°`;
-    if ($("#weatherIcon")) $("#weatherIcon").textContent = icon;
-    if ($("#weatherText")) $("#weatherText").textContent = desc;
-
-    if ($("#wTemp")) $("#wTemp").textContent = `${t}°`;
-    if ($("#wDesc")) $("#wDesc").textContent = desc;
-    if ($("#humidity")) {
-      $("#humidity").textContent =
-        `${j.current.relative_humidity_2m}%`;
+    if (!response.ok) {
+      throw new Error("WEATHER_HTTP_ERROR");
     }
 
-  } catch (e) {
-    if ($("#weatherText")) $("#weatherText").textContent = "OFFLINE";
-    if ($("#wDesc")) $("#wDesc").textContent = "OFFLINE";
+    const data = await response.json();
+
+    const current = data.current;
+
+    const code = current.weather_code;
+    const temp = Math.round(current.temperature_2m);
+    const humidity = current.relative_humidity_2m;
+
+    const icon =
+      code === 0
+        ? "☼"
+        : code < 60
+          ? "☁"
+          : "◌";
+
+    const description =
+      code === 0
+        ? "CLEAR"
+        : code < 60
+          ? "CLOUDY"
+          : "PRECIP";
+
+    if ($("#temp")) {
+      $("#temp").textContent = `${temp}°`;
+    }
+
+    if ($("#weatherIcon")) {
+      $("#weatherIcon").textContent = icon;
+    }
+
+    if ($("#weatherText")) {
+      $("#weatherText").textContent = description;
+    }
+
+    if ($("#wTemp")) {
+      $("#wTemp").textContent = `${temp}°`;
+    }
+
+    if ($("#wDesc")) {
+      $("#wDesc").textContent = description;
+    }
+
+    if ($("#humidity")) {
+      $("#humidity").textContent = `${humidity}%`;
+    }
+
+  } catch (error) {
+
+    console.warn("Weather error:", error);
+
+    if ($("#weatherText")) {
+      $("#weatherText").textContent = "OFFLINE";
+    }
+
+    if ($("#wDesc")) {
+      $("#wDesc").textContent = "OFFLINE";
+    }
   }
 }
 
@@ -87,16 +125,20 @@ weather();
 /* =========================
    SYSTEM STATE
 ========================= */
+
 function state(main, sub) {
 
-  if ($("#listenLabel"))
+  if ($("#listenLabel")) {
     $("#listenLabel").textContent = main;
+  }
 
-  if ($("#subLabel"))
+  if ($("#subLabel")) {
     $("#subLabel").textContent = sub;
+  }
 
-  if ($("#mode"))
+  if ($("#mode")) {
     $("#mode").textContent = main;
+  }
 
   if ($("#talkState")) {
     $("#talkState").textContent =
@@ -126,34 +168,40 @@ function state(main, sub) {
         : main;
   }
 
-  if ($("#activityText"))
+  if ($("#activityText")) {
     $("#activityText").textContent = main;
+  }
 }
 
 
 /* =========================
    CHAT DISPLAY
 ========================= */
+
 function msg(who, text) {
 
   const box = $("#messages");
 
   if (!box) return;
 
-  const e = document.createElement("div");
+  const element = document.createElement("div");
 
-  e.className = `msg ${who}`;
+  element.className = `msg ${who}`;
 
-  e.innerHTML =
+  element.innerHTML =
     `<b>${who === "ai" ? "O" : "Y"}</b>` +
     `<div>` +
     `<small>${who === "ai" ? "ORRERY" : "YOU"}</small>` +
     `<p></p>` +
     `</div>`;
 
-  e.querySelector("p").textContent = text;
+  const paragraph = element.querySelector("p");
 
-  box.appendChild(e);
+  if (paragraph) {
+    paragraph.textContent = String(text || "");
+  }
+
+  box.appendChild(element);
 
   box.scrollTop = box.scrollHeight;
 }
@@ -162,60 +210,79 @@ function msg(who, text) {
 /* =========================
    PREVIEW
 ========================= */
+
 function preview(text) {
 
-  const el = $("#preview");
+  const element = $("#preview");
 
-  if (el)
-    el.textContent = text;
+  if (element) {
+    element.textContent = text;
+  }
 }
 
 
 /* =========================
    IOS SPEECH UNLOCK
 ========================= */
+
 function unlockSpeech() {
 
   if (
     !("speechSynthesis" in window) ||
     S.speechUnlocked
-  ) return;
+  ) {
+    return;
+  }
 
   try {
 
     speechSynthesis.cancel();
 
-    const u =
+    const utterance =
       new SpeechSynthesisUtterance("");
 
-    u.lang = "ja-JP";
-    u.volume = 0;
+    utterance.lang = "ja-JP";
+    utterance.volume = 0;
 
-    speechSynthesis.speak(u);
+    speechSynthesis.speak(utterance);
 
     S.speechUnlocked = true;
 
-  } catch (e) {}
+  } catch (error) {
+
+    console.warn(
+      "Speech unlock error:",
+      error
+    );
+  }
 }
 
 
 /* =========================
    JAPANESE VOICE
 ========================= */
+
 function japaneseVoice() {
 
-  if (!("speechSynthesis" in window))
+  if (!("speechSynthesis" in window)) {
     return null;
+  }
 
   const voices =
     speechSynthesis.getVoices();
 
   return (
-    voices.find(v =>
-      /^ja(-|_)/i.test(v.lang)
+    voices.find(
+      voice =>
+        voice.lang === "ja-JP"
     ) ||
-    voices.find(v =>
-      /japanese|日本語/i.test(v.name)
+    voices.find(
+      voice =>
+        /^ja(-|_)/i.test(voice.lang)
+    ) ||
+    voices.find(
+      voice =>
+        /japanese|日本語/i.test(voice.name)
     ) ||
     null
   );
@@ -225,56 +292,112 @@ function japaneseVoice() {
 /* =========================
    SPEAK
 ========================= */
+
 function speak(text) {
 
   if (
-    !("speechSynthesis" in window) ||
-    !text
-  ) return;
+    !text ||
+    !("speechSynthesis" in window)
+  ) {
 
-  speechSynthesis.cancel();
-
-  const u =
-    new SpeechSynthesisUtterance(text);
-
-  u.lang = "ja-JP";
-  u.rate = 0.98;
-  u.pitch = 1;
-  u.volume = 1;
-
-  const voice = japaneseVoice();
-
-  if (voice)
-    u.voice = voice;
-
-  u.onstart = () => {
-    state(
-      "SPEAKING",
-      "AI VOICE OUTPUT"
-    );
-  };
-
-  u.onend = () => {
     state(
       "STANDBY",
       "「オレリー」と話しかけてください"
     );
-  };
 
-  u.onerror = () => {
+    return;
+  }
+
+  try {
+
+    speechSynthesis.cancel();
+
+    const utterance =
+      new SpeechSynthesisUtterance(
+        String(text)
+      );
+
+    utterance.lang = "ja-JP";
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    const voice = japaneseVoice();
+
+    if (voice) {
+      utterance.voice = voice;
+    }
+
+    utterance.onstart = () => {
+
+      state(
+        "SPEAKING",
+        "ORRERY IS SPEAKING"
+      );
+    };
+
+    utterance.onend = () => {
+
+      state(
+        "STANDBY",
+        "「オレリー」と話しかけてください"
+      );
+
+      preview(
+        "オレリーに話しかけてください"
+      );
+    };
+
+    utterance.onerror = error => {
+
+      console.warn(
+        "Speech synthesis error:",
+        error
+      );
+
+      state(
+        "STANDBY",
+        "音声出力を確認してください"
+      );
+    };
+
+    /*
+     * iPhone Safariでは、
+     * 音声認識終了直後にspeechSynthesisを
+     * 呼ぶと無視されることがあるため少し待つ。
+     */
+    setTimeout(() => {
+
+      try {
+        speechSynthesis.speak(utterance);
+      } catch (error) {
+        console.warn(
+          "Speech speak error:",
+          error
+        );
+      }
+
+    }, 80);
+
+  } catch (error) {
+
+    console.warn(
+      "Speech error:",
+      error
+    );
+
     state(
       "STANDBY",
       "音声出力を確認してください"
     );
-  };
-
-  speechSynthesis.speak(u);
+  }
 }
 
 
 /* =========================
    LOCAL AI
 ========================= */
+
 function localAI(text) {
 
   if (/天気|気温|福岡/.test(text)) {
@@ -292,7 +415,7 @@ function localAI(text) {
     return "私はORRERY。あなたのiPhone上で動くAIアシスタントです。";
   }
 
-  if (/こんにちは|こんばんは|おはよう/.test(text)) {
+  if (/こんにちは|こんにちわ|こんばんは|おはよう/.test(text)) {
 
     return "こんにちは。ORRERYはオンラインです。";
   }
@@ -307,25 +430,32 @@ function localAI(text) {
     return "システムは正常です。いつでも話しかけてください。";
   }
 
-  return "現在はローカル会話モードです。AIバックエンドを接続すると、自由に会話できます。";
+  return "現在はローカル会話モードです。";
 }
 
 
 /* =========================
    AI REQUEST
 ========================= */
+
 async function ask(text) {
 
-  const t = String(text || "").trim();
+  const message =
+    String(text || "").trim();
 
-  if (!t || S.busy)
+  if (!message || S.busy) {
     return;
+  }
 
   S.busy = true;
 
-  preview(t);
+  preview(message);
 
-  msg("user", t);
+  /*
+   * 音声入力から来た場合は、
+   * ここでユーザー発言を表示する。
+   */
+  msg("user", message);
 
   state(
     "PROCESSING",
@@ -336,6 +466,9 @@ async function ask(text) {
 
   try {
 
+    /*
+     * AI ENDPOINT
+     */
     if (S.endpoint) {
 
       const response =
@@ -350,53 +483,65 @@ async function ask(text) {
             },
 
             body: JSON.stringify({
-              message: t,
+              message,
               history:
                 S.history.slice(-12)
             })
           }
         );
 
-      if (!response.ok)
+      if (!response.ok) {
+
         throw new Error(
           `HTTP ${response.status}`
         );
+      }
 
       const data =
         await response.json();
 
       answer =
-        data.reply ||
-        data.output ||
-        data.message ||
-        data.output_text ||
+        data?.reply ||
+        data?.output ||
+        data?.message ||
+        data?.output_text ||
         "";
 
-      if (!answer)
+      if (!answer) {
+
         throw new Error(
           "EMPTY_RESPONSE"
         );
+      }
 
     } else {
 
-      answer = localAI(t);
-
+      /*
+       * Worker未設定時のローカル応答
+       */
+      answer = localAI(message);
     }
 
-  } catch (e) {
+  } catch (error) {
 
     console.error(
-      "ORRERY AI ERROR",
-      e
+      "ORRERY AI ERROR:",
+      error
     );
 
     answer =
-      "AIリンクに接続できませんでした。LINK設定のURLを確認してください。";
+      "AIとの通信に失敗しました。";
+
   }
+
+
+  /* =========================
+     HISTORY
+  ========================= */
 
   S.history.push({
     role: "user",
-    content: t
+    content: message
   });
 
   S.history.push({
@@ -404,16 +549,28 @@ async function ask(text) {
     content: answer
   });
 
-  /* AIの返答を必ず画面に表示 */
+
+  /* =========================
+     RESPONSE DISPLAY
+  ========================= */
+
   msg("ai", answer);
 
-  /* 表示バグ修正 */
   preview(answer);
 
   S.busy = false;
 
-  /* AIの返答を音声出力 */
-  unlockSpeech();
+  S.finalReceived = false;
+
+
+  /* =========================
+     VOICE OUTPUT
+  ========================= */
+
+  state(
+    "SPEAKING",
+    "ORRERY IS SPEAKING"
+  );
 
   speak(answer);
 }
@@ -422,6 +579,7 @@ async function ask(text) {
 /* =========================
    SPEECH RECOGNITION
 ========================= */
+
 function setupSpeech() {
 
   const Recognition =
@@ -438,25 +596,30 @@ function setupSpeech() {
     return null;
   }
 
-  const r =
+  const recognition =
     new Recognition();
 
-  r.lang = "ja-JP";
+  recognition.lang = "ja-JP";
 
-  r.continuous = false;
+  recognition.continuous = false;
 
-  r.interimResults = true;
+  recognition.interimResults = true;
 
-  r.maxAlternatives = 3;
+  recognition.maxAlternatives = 3;
 
 
-  /* START */
+  /* =========================
+     START
+  ========================= */
 
-  r.onstart = () => {
+  recognition.onstart = () => {
 
     S.listening = true;
+    S.finalReceived = false;
 
-    $("#mic")?.classList.add("active");
+    $("#mic")
+      ?.classList
+      .add("active");
 
     state(
       "LISTENING",
@@ -471,70 +634,91 @@ function setupSpeech() {
   };
 
 
-  /* RESULT */
+  /* =========================
+     RESULT
+  ========================= */
 
-  r.onresult = e => {
+  recognition.onresult = event => {
 
-    let interim = "";
-
-    let finalText = "";
+    let text = "";
 
     for (
-      let i = e.resultIndex;
-      i < e.results.length;
+      let i = event.resultIndex;
+      i < event.results.length;
       i++
     ) {
 
       const result =
-        e.results[i];
+        event.results[i];
 
-      const transcript =
-        result[0]?.transcript || "";
+      if (result?.[0]) {
 
-      if (result.isFinal) {
-
-        finalText += transcript;
-
-      } else {
-
-        interim += transcript;
+        text += result[0].transcript;
       }
     }
 
+    text = text.trim();
 
-    /* 認識途中 */
-
-    if (interim) {
-
-      preview(interim);
+    if (!text) {
+      return;
     }
 
+    preview(text);
 
-    /* 認識確定 */
+    /*
+     * 最後の結果が確定した場合
+     */
+    const lastResult =
+      event.results[
+        event.results.length - 1
+      ];
 
-    if (finalText.trim()) {
+    if (
+      lastResult &&
+      lastResult.isFinal
+    ) {
 
-      const clean =
-        finalText.trim();
+      S.finalReceived = true;
 
-      preview(clean);
+      const finalText = text;
 
-      setTimeout(
-        () => ask(clean),
-        100
+      state(
+        "PROCESSING",
+        "ORRERY IS THINKING"
       );
+
+      /*
+       * iPhone Safariで
+       * recognition.onend と ask() が
+       * 競合しないよう少し待つ。
+       */
+      setTimeout(() => {
+
+        ask(finalText);
+
+      }, 180);
     }
   };
 
 
-  /* ERROR */
+  /* =========================
+     ERROR
+  ========================= */
 
-  r.onerror = e => {
+  recognition.onerror = event => {
 
     console.warn(
-      "SpeechRecognition:",
-      e.error
+      "ORRERY Speech Error:",
+      event.error
     );
+
+    /*
+     * 確定済みなら、
+     * iPhone特有の後続エラーとして無視。
+     */
+    if (S.finalReceived) {
+      return;
+    }
 
     S.listening = false;
 
@@ -543,24 +727,30 @@ function setupSpeech() {
       .remove("active");
 
     let message =
-      "音声認識を確認してください。";
+      "もう一度話しかけてください。";
 
-    if (e.error === "not-allowed") {
+    if (event.error === "not-allowed") {
 
       message =
         "マイクの使用を許可してください。";
     }
 
-    if (e.error === "no-speech") {
-
-      message =
-        "聞き取れませんでした。もう一度話してください。";
-    }
-
-    if (e.error === "network") {
+    if (event.error === "network") {
 
       message =
         "音声認識の通信を確認してください。";
+    }
+
+    if (event.error === "no-speech") {
+
+      message =
+        "聞き取れませんでした。";
+    }
+
+    if (event.error === "aborted") {
+
+      message =
+        "音声認識を停止しました。";
     }
 
     state(
@@ -572,9 +762,11 @@ function setupSpeech() {
   };
 
 
-  /* END */
+  /* =========================
+     END
+  ========================= */
 
-  r.onend = () => {
+  recognition.onend = () => {
 
     S.listening = false;
 
@@ -582,7 +774,14 @@ function setupSpeech() {
       ?.classList
       .remove("active");
 
-    if (!S.busy) {
+    /*
+     * 確定済みならask()側で処理中。
+     * ここではSTANDBYに戻さない。
+     */
+    if (
+      !S.finalReceived &&
+      !S.busy
+    ) {
 
       state(
         "STANDBY",
@@ -592,7 +791,7 @@ function setupSpeech() {
   };
 
 
-  return r;
+  return recognition;
 }
 
 
@@ -602,6 +801,7 @@ S.rec = setupSpeech();
 /* =========================
    START MICROPHONE
 ========================= */
+
 function startListening() {
 
   unlockSpeech();
@@ -620,7 +820,12 @@ function startListening() {
 
     try {
       S.rec.stop();
-    } catch (e) {}
+    } catch (error) {
+      console.warn(
+        "Speech stop error:",
+        error
+      );
+    }
 
     return;
   }
@@ -629,23 +834,37 @@ function startListening() {
 
     S.rec.start();
 
-  } catch (e) {
+  } catch (error) {
 
     console.warn(
       "Speech start error:",
-      e
+      error
     );
 
     try {
 
       S.rec.abort();
 
-      setTimeout(
-        () => S.rec.start(),
-        250
-      );
+      setTimeout(() => {
 
-    } catch (e2) {}
+        try {
+          S.rec.start();
+        } catch (retryError) {
+          console.warn(
+            "Speech retry error:",
+            retryError
+          );
+        }
+
+      }, 250);
+
+    } catch (abortError) {
+
+      console.warn(
+        "Speech abort error:",
+        abortError
+      );
+    }
   }
 }
 
@@ -653,20 +872,27 @@ function startListening() {
 /* =========================
    VISUALIZER
 ========================= */
+
 function visual() {
 
-  if (S.visualStarted)
+  if (S.visualStarted) {
     return;
+  }
 
   S.visualStarted = true;
 
   const canvas = $("#viz");
 
-  if (!canvas)
+  if (!canvas) {
     return;
+  }
 
   const ctx =
     canvas.getContext("2d");
+
+  if (!ctx) {
+    return;
+  }
 
 
   function resize() {
@@ -686,7 +912,7 @@ function visual() {
 
   resize();
 
-  addEventListener(
+  window.addEventListener(
     "resize",
     resize
   );
@@ -694,15 +920,14 @@ function visual() {
 
   function draw() {
 
-    const w = canvas.width;
-
-    const h = canvas.height;
+    const width = canvas.width;
+    const height = canvas.height;
 
     ctx.clearRect(
       0,
       0,
-      w,
-      h
+      width,
+      height
     );
 
     ctx.beginPath();
@@ -721,42 +946,43 @@ function visual() {
         speechSynthesis.speaking
       );
 
-
     for (
       let p = 0;
-      p < w;
+      p < width;
       p += 4
     ) {
 
       const y =
-        h / 2 +
+        height / 2 +
         (
           active
-            ? Math.sin(
-                p / 16 +
-                Date.now() / 80
-              ) * 14 +
-              Math.sin(
-                p / 6 +
-                Date.now() / 130
-              ) * 5
+            ? (
+                Math.sin(
+                  p / 16 +
+                  Date.now() / 80
+                ) * 14 +
+                Math.sin(
+                  p / 6 +
+                  Date.now() / 130
+                ) * 5
+              )
             : Math.sin(
                 p / 28 +
                 Date.now() / 500
               ) * 2
         );
 
-      if (p)
+      if (p) {
         ctx.lineTo(p, y);
-      else
+      } else {
         ctx.moveTo(p, y);
+      }
     }
 
     ctx.stroke();
 
 
-    const core =
-      $("#core");
+    const core = $("#core");
 
     if (core) {
 
@@ -770,7 +996,6 @@ function visual() {
             })`
           : "scale(1)";
     }
-
 
     requestAnimationFrame(draw);
   }
@@ -789,6 +1014,10 @@ $("#mic")?.addEventListener(
 );
 
 
+/* =========================
+   SEND BUTTON
+========================= */
+
 $("#send")?.addEventListener(
   "click",
   () => {
@@ -799,23 +1028,26 @@ $("#send")?.addEventListener(
         .trim() || "";
 
     if (
-      text &&
-      text !==
-        "オレリーに話しかけてください" &&
-      !text.includes(
+      !text ||
+      text ===
+        "オレリーに話しかけてください" ||
+      text.includes(
         "聞き取っています"
       )
     ) {
-
-      unlockSpeech();
-
-      ask(text);
+      return;
     }
+
+    unlockSpeech();
+
+    ask(text);
   }
 );
 
 
-/* QUICK COMMANDS */
+/* =========================
+   QUICK COMMANDS
+========================= */
 
 document
   .querySelectorAll(".quick button")
@@ -823,10 +1055,15 @@ document
 
     button.addEventListener(
       "click",
-      () =>
-        ask(
-          button.dataset.prompt
-        )
+      () => {
+
+        const prompt =
+          button.dataset.prompt;
+
+        if (prompt) {
+          ask(prompt);
+        }
+      }
     );
   });
 
@@ -839,29 +1076,58 @@ $("#config")?.addEventListener(
   "click",
   () => {
 
-    $("#endpoint").value =
-      S.endpoint;
+    const endpoint =
+      $("#endpoint");
 
-    $("#settings").showModal();
+    if (endpoint) {
+      endpoint.value = S.endpoint;
+    }
+
+    const settings =
+      $("#settings");
+
+    if (settings) {
+      settings.showModal();
+    }
   }
 );
 
 
+/* =========================
+   CLOSE SETTINGS
+========================= */
+
 $("#close")?.addEventListener(
   "click",
-  () =>
-    $("#settings").close()
+  () => {
+
+    const settings =
+      $("#settings");
+
+    if (settings) {
+      settings.close();
+    }
+  }
 );
 
+
+/* =========================
+   SAVE SETTINGS
+========================= */
 
 $("#save")?.addEventListener(
   "click",
   () => {
 
+    const endpoint =
+      $("#endpoint");
+
+    if (!endpoint) {
+      return;
+    }
+
     S.endpoint =
-      $("#endpoint")
-        .value
-        .trim();
+      endpoint.value.trim();
 
     localStorage.setItem(
       "orreryEndpoint",
@@ -876,7 +1142,12 @@ $("#save")?.addEventListener(
           : "LOCAL";
     }
 
-    $("#settings").close();
+    const settings =
+      $("#settings");
+
+    if (settings) {
+      settings.close();
+    }
 
     msg(
       "ai",
@@ -889,6 +1160,22 @@ $("#save")?.addEventListener(
 
 
 /* =========================
+   LOAD SAVED ENDPOINT
+========================= */
+
+const savedEndpoint =
+  localStorage.getItem(
+    "orreryEndpoint"
+  );
+
+if (savedEndpoint) {
+
+  S.endpoint =
+    savedEndpoint.trim();
+}
+
+
+/* =========================
    RESET
 ========================= */
 
@@ -898,8 +1185,9 @@ $("#clear")?.addEventListener(
 
     S.history = [];
 
-    if ($("#messages"))
+    if ($("#messages")) {
       $("#messages").innerHTML = "";
+    }
 
     msg(
       "ai",
@@ -917,32 +1205,27 @@ $("#clear")?.addEventListener(
    NETWORK
 ========================= */
 
-if ($("#network")) {
+function updateNetwork() {
 
-  $("#network").textContent =
-    navigator.onLine
-      ? "ONLINE"
-      : "OFFLINE";
+  if ($("#network")) {
+
+    $("#network").textContent =
+      navigator.onLine
+        ? "ONLINE"
+        : "OFFLINE";
+  }
 }
 
-addEventListener(
-  "online",
-  () => {
+updateNetwork();
 
-    if ($("#network"))
-      $("#network").textContent =
-        "ONLINE";
-  }
+window.addEventListener(
+  "online",
+  updateNetwork
 );
 
-addEventListener(
+window.addEventListener(
   "offline",
-  () => {
-
-    if ($("#network"))
-      $("#network").textContent =
-        "OFFLINE";
-  }
+  updateNetwork
 );
 
 
@@ -955,7 +1238,9 @@ if (
 ) {
 
   speechSynthesis.onvoiceschanged =
-    () => {};
+    () => {
+      japaneseVoice();
+    };
 }
 
 
@@ -963,10 +1248,17 @@ if (
    INIT
 ========================= */
 
-if (S.endpoint && $("#aiLink")) {
+if (
+  S.endpoint &&
+  $("#aiLink")
+) {
 
   $("#aiLink").textContent =
     "SECURE";
+} else if ($("#aiLink")) {
+
+  $("#aiLink").textContent =
+    "LOCAL";
 }
 
 state(
@@ -975,424 +1267,3 @@ state(
 );
 
 visual();
-/* =========================
-   ORRERY V4.2 VOICE FIX
-   ========================= */
-
-S.finalReceived = false;
-S.lastSpeechText = "";
-
-/* 音声認識をiPhone向けに再構成 */
-if (S.rec) {
-
-  S.rec.onstart = () => {
-
-    S.listening = true;
-    S.finalReceived = false;
-
-    $("#mic")?.classList.add("active");
-
-    state(
-      "LISTENING",
-      "お話しください"
-    );
-
-    preview("聞き取っています…");
-  };
-
-
-  S.rec.onresult = event => {
-
-    let text = "";
-
-    for (
-      let i = event.resultIndex;
-      i < event.results.length;
-      i++
-    ) {
-
-      const result = event.results[i];
-
-      if (result[0]) {
-        text += result[0].transcript;
-      }
-    }
-
-    text = text.trim();
-
-    if (!text) return;
-
-    preview(text);
-
-    const last =
-      event.results[event.results.length - 1];
-
-    if (last && last.isFinal) {
-
-      S.finalReceived = true;
-
-      const finalText = text;
-
-      state(
-        "PROCESSING",
-        "ORRERY IS THINKING"
-      );
-
-      /* 認識終了処理と競合しないよう少し待つ */
-      setTimeout(() => {
-
-        ask(finalText);
-
-      }, 180);
-    }
-  };
-
-
-  S.rec.onerror = event => {
-
-    console.log(
-      "ORRERY Speech Error:",
-      event.error
-    );
-
-    /*
-      iPhoneでは正常認識後に
-      aborted / no-speech が発生することがある。
-      確定済みならエラー扱いしない。
-    */
-    if (S.finalReceived) {
-      return;
-    }
-
-    S.listening = false;
-
-    $("#mic")
-      ?.classList
-      .remove("active");
-
-    let text =
-      "もう一度話しかけてください。";
-
-    if (event.error === "not-allowed") {
-      text =
-        "マイクの使用を許可してください。";
-    }
-
-    if (event.error === "network") {
-      text =
-        "音声認識の通信を確認してください。";
-    }
-
-    if (event.error === "no-speech") {
-      text =
-        "聞き取れませんでした。";
-    }
-
-    state(
-      "STANDBY",
-      text
-    );
-
-    preview(text);
-  };
-
-
-  S.rec.onend = () => {
-
-    S.listening = false;
-
-    $("#mic")
-      ?.classList
-      .remove("active");
-
-    /*
-      認識確定後はask()側に任せる。
-      ここでSTANDBYに戻して返答表示を
-      上書きしない。
-    */
-    if (!S.finalReceived && !S.busy) {
-
-      state(
-        "STANDBY",
-        "「オレリー」と話しかけてください"
-      );
-    }
-  };
-}
-
-
-/* =========================
-   V4.2 RESPONSE
-   ========================= */
-
-ask = async function(text) {
-
-  const t = String(text || "").trim();
-
-  if (!t || S.busy) return;
-
-  S.busy = true;
-
-  preview(t);
-
-  state(
-    "PROCESSING",
-    "ORRERY IS THINKING"
-  );
-
-  let answer = "";
-
-  try {
-
-    /*
-      まずローカル応答で確実にテスト。
-      AI Endpointが設定されていればそちらを使用。
-    */
-
-    if (S.endpoint) {
-
-      const response =
-        await fetch(
-          S.endpoint,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-
-            body: JSON.stringify({
-              message: t,
-              history:
-                S.history.slice(-12)
-            })
-          }
-        );
-
-      if (!response.ok) {
-        throw new Error(
-          "HTTP " + response.status
-        );
-      }
-
-      const data =
-        await response.json();
-
-      answer =
-        data.reply ||
-        data.output ||
-        data.message ||
-        "";
-
-      if (!answer) {
-        throw new Error(
-          "EMPTY_RESPONSE"
-        );
-      }
-
-    } else {
-
-      /* AI未接続でも必ず返答 */
-      if (
-        /こんにちは|こんにちわ/.test(t)
-      ) {
-
-        answer =
-          "こんにちは。ORRERYはオンラインです。";
-
-      } else if (
-        /名前|誰/.test(t)
-      ) {
-
-        answer =
-          "私はORRERY。あなたのiPhoneで動くAIアシスタントです。";
-
-      } else if (
-        /何時|時間/.test(t)
-      ) {
-
-        answer =
-          "現在時刻は" +
-          ($("#clock")?.textContent || "") +
-          "です。";
-
-      } else {
-
-        answer =
-          "聞こえています。ORRERYは正常に動作しています。";
-      }
-    }
-
-  } catch (error) {
-
-    console.error(
-      "ORRERY RESPONSE ERROR",
-      error
-    );
-
-    answer =
-      "AIとの通信に失敗しました。";
-  }
-
-
-  /* 会話履歴 */
-
-  S.history.push({
-    role: "user",
-    content: t
-  });
-
-  S.history.push({
-    role: "assistant",
-    content: answer
-  });
-
-
-  /* =========================
-     重要：返答を画面に表示
-     ========================= */
-
-  msg(
-    "user",
-    t
-  );
-
-  msg(
-    "ai",
-    answer
-  );
-
-  /*
-    TALK欄にも返答を表示
-  */
-
-  preview(answer);
-
-
-  /* =========================
-     音声出力
-     ========================= */
-
-  S.busy = false;
-
-  S.finalReceived = false;
-
-  state(
-    "SPEAKING",
-    "ORRERY IS SPEAKING"
-  );
-
-  speak(answer);
-};
-
-
-/* =========================
-   iPhone SPEECH OUTPUT
-   ========================= */
-
-speak = function(text) {
-
-  if (
-    !text ||
-    !("speechSynthesis" in window)
-  ) {
-
-    state(
-      "STANDBY",
-      "「オレリー」と話しかけてください"
-    );
-
-    return;
-  }
-
-
-  speechSynthesis.cancel();
-
-
-  const utterance =
-    new SpeechSynthesisUtterance(text);
-
-  utterance.lang =
-    "ja-JP";
-
-  utterance.rate =
-    0.95;
-
-  utterance.pitch =
-    1.0;
-
-  utterance.volume =
-    1.0;
-
-
-  const voices =
-    speechSynthesis.getVoices();
-
-
-  const japanese =
-    voices.find(
-      voice =>
-        voice.lang === "ja-JP"
-    ) ||
-    voices.find(
-      voice =>
-        voice.lang.startsWith("ja")
-    );
-
-
-  if (japanese) {
-    utterance.voice = japanese;
-  }
-
-
-  utterance.onstart = () => {
-
-    state(
-      "SPEAKING",
-      "ORRERY IS SPEAKING"
-    );
-  };
-
-
-  utterance.onend = () => {
-
-    state(
-      "STANDBY",
-      "「オレリー」と話しかけてください"
-    );
-
-    preview(
-      "オレリーに話しかけてください"
-    );
-  };
-
-
-  utterance.onerror = error => {
-
-    console.log(
-      "Speech synthesis error:",
-      error
-    );
-
-    state(
-      "STANDBY",
-      "音声出力を確認してください"
-    );
-  };
-
-
-  /*
-    iPhone Safari対策
-  */
-  setTimeout(() => {
-
-    speechSynthesis.speak(
-      utterance
-    );
-
-  }, 80);
-};
-/* =========================
-   ORRERY V4.2 VOICE FIX
-   ========================= */

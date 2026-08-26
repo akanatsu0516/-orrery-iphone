@@ -1,87 +1,13 @@
-const $=s=>document.querySelector(s);
-const timeEl=$("#time"), dateEl=$("#date"), dial=$("#dial"), statusEl=$("#status");
-function tick(){
- const d=new Date(), h=String(d.getHours()).padStart(2,"0"), m=String(d.getMinutes()).padStart(2,"0"), s=String(d.getSeconds()).padStart(2,"0");
- timeEl.innerHTML=`${h}:${m}<span>${s}</span>`;
- dateEl.textContent=d.toLocaleDateString("en-US",{month:"short",day:"2-digit",year:"numeric"}).toUpperCase();
-}
-setInterval(tick,250);tick();
-
-async function weather(){
- try{
-  const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&current=temperature_2m,weather_code&timezone=Asia%2FTokyo");
-  const j=await r.json(); const t=Math.round(j.current.temperature_2m);
-  $("#temp").textContent=`${t}°`;
-  const code=j.current.weather_code;
-  $("#weatherIcon").textContent=code===0?"☼":code<60?"☁":"◌";
-  $("#weatherText").textContent=code===0?"CLEAR":code<60?"CLOUDY":"PRECIP";
- }catch(e){$("#weatherText").textContent="OFFLINE"}
-}
-weather();
-
-if(navigator.getBattery){
- navigator.getBattery().then(b=>{
-  const update=()=>{$("#battery").textContent=Math.round(b.level*100)+"%";$("#batteryBar").style.width=(b.level*100)+"%";};
-  update(); b.addEventListener("levelchange",update);
- });
-} else {
- $("#battery").textContent="iOS";
- $("#batteryBar").style.width="42%";
-}
-$("#network").textContent=navigator.onLine?"ONLINE":"OFFLINE";
-addEventListener("online",()=>$("#network").textContent="ONLINE");
-addEventListener("offline",()=>$("#network").textContent="OFFLINE");
-
-const canvas=$("#viz"),ctx=canvas.getContext("2d");let audioCtx,analyser,data,stream,raf;
-function resize(){canvas.width=canvas.clientWidth*devicePixelRatio;canvas.height=canvas.clientHeight*devicePixelRatio}
-addEventListener("resize",resize);resize();
-function draw(){
- const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);
- if(analyser){
-  analyser.getByteFrequencyData(data);
-  const sum=data.reduce((a,b)=>a+b,0)/data.length;
-  const energy=Math.min(1,sum/72);
-  dial.style.transform=`scale(${1+energy*.045}) rotate(${Math.sin(Date.now()/900)*energy*.8}deg)`;
-  document.body.classList.toggle("reactor-hot",energy>.18);
-  statusEl.textContent=sum>18?"AUDIO ACTIVE":"SYSTEM READY";
-  $("#micState").textContent=sum>18?"LISTENING":"LIVE";
-  const accent=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
-  ctx.beginPath();ctx.strokeStyle=accent;ctx.lineWidth=2*devicePixelRatio;
-  for(let i=0;i<data.length;i+=2){
-    const x=i/data.length*w;
-    const amp=(data[i]/255)*h*.72;
-    const y=h/2-Math.max(2,amp)*Math.sin(i*.35+Date.now()/180)*.42;
-    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)
-  }
-  ctx.stroke();
-  ctx.beginPath();ctx.strokeStyle="rgba(255,255,255,.22)";ctx.lineWidth=devicePixelRatio;
-  ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();
-} else {
-  const t=Date.now()/650;ctx.beginPath();ctx.strokeStyle="rgba(84,221,255,.45)";ctx.lineWidth=1.2*devicePixelRatio;
-  for(let x=0;x<w;x+=4){let y=h/2+Math.sin(x/38+t)*4+Math.sin(x/11+t*.7)*1.5;if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke();
-}
- raf=requestAnimationFrame(draw);
-}draw();
-
-$("#micBtn").onclick=async()=>{
- if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;analyser=null;$("#micState").textContent="IDLE";$("#micBtn").innerHTML="<span>◉</span> TAP TO ACTIVATE";return}
- try{
-  stream=await navigator.mediaDevices.getUserMedia({audio:true});
-  audioCtx=new (AudioContext||webkitAudioContext)(); analyser=audioCtx.createAnalyser();analyser.fftSize=256;
-  const src=audioCtx.createMediaStreamSource(stream);src.connect(analyser);data=new Uint8Array(analyser.frequencyBinCount);
-  $("#micState").textContent="LIVE";$("#micBtn").innerHTML="<span>●</span> STOP AUDIO REACTOR";
- }catch(e){$("#status").textContent="MIC ACCESS DENIED"}
-};
-
-document.querySelectorAll(".dock button[data-mode]").forEach(b=>b.onclick=()=>{
- document.body.classList.remove("minimal","ambient"); document.querySelectorAll(".dock button").forEach(x=>x.classList.remove("active"));b.classList.add("active");
- if(b.dataset.mode!=="live")document.body.classList.add(b.dataset.mode);
-});
-$("#settingsBtn").onclick=()=>$("#settings").showModal();
-$("#closeSettings").onclick=()=>$("#settings").close();
-document.querySelectorAll(".themes button").forEach(b=>b.onclick=()=>{
- const c=getComputedStyle(b).backgroundColor; document.documentElement.style.setProperty("--accent",c);
-});
-$("#save").onclick=()=>$("#settings").close();
-
-if("serviceWorker" in navigator) addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));
+const $=s=>document.querySelector(s),S={endpoint:localStorage.getItem('orreryEndpoint')||'',rec:null,listening:false,busy:false};
+function tick(){let d=new Date();$('#clock').textContent=d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});$('#date').textContent=d.toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric',weekday:'short'}).toUpperCase()}setInterval(tick,250);tick();
+async function weather(){try{let r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&current=temperature_2m,relative_humidity_2m,weather_code&timezone=Asia%2FTokyo'),j=await r.json(),c=j.current.weather_code,t=Math.round(j.current.temperature_2m),i=c===0?'☼':c<60?'☁':'◌',d=c===0?'CLEAR':c<60?'CLOUDY':'PRECIP';$('#temp').textContent=t+'°';$('#weatherIcon').textContent=i;$('#weatherText').textContent=d;$('#wTemp').textContent=t+'°';$('#wIcon').textContent=i;$('#wDesc').textContent=d;$('#humidity').textContent=j.current.relative_humidity_2m+'%'}catch(e){$('#weatherText').textContent='OFFLINE'}}weather();
+function state(a,b){$('#listenLabel').textContent=a;$('#subLabel').textContent=b;$('#systemState').textContent=a==='STANDBY'?'SYSTEM ONLINE':'AI '+a;$('#audioState').textContent=a==='STANDBY'?'IDLE':a}
+function msg(w,t){let e=document.createElement('div');e.className='bubble '+w;e.innerHTML='<b>'+(w==='ai'?'O':'Y')+'</b><p><small>'+(w==='ai'?'ORRERY':'YOU')+'</small></p>';e.querySelector('p').append(document.createTextNode(t));$('#messages').appendChild(e);$('#messages').scrollTop=1e6}
+function speak(t){if(!('speechSynthesis'in window))return;speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang='ja-JP';u.rate=.98;u.onstart=()=>state('SPEAKING','AI VOICE OUTPUT');u.onend=()=>state('STANDBY','「オレリー」と話しかけてください');speechSynthesis.speak(u)}
+function local(t){if(/天気|気温|福岡/.test(t))return '福岡の現在の天気は画面上部に表示しています。AIバックエンドを接続すると詳しい予報も会話できます。';if(/時間/.test(t))return '現在時刻は'+$('#clock').textContent+'です。';if(/こんにちは|こんばんは|おはよう/.test(t))return 'こんにちは。ORRERYはオンラインです。';return '了解しました。現在はローカル会話モードです。設定からAIバックエンドを接続すると自由会話ができます。'}
+async function ask(t){if(!t||S.busy)return;S.busy=true;$('#preview').textContent=t;msg('user',t);state('PROCESSING','ORRERY AI IS THINKING');let a='';try{if(S.endpoint){let r=await fetch(S.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})});if(!r.ok)throw Error(r.status);let j=await r.json();a=j.reply||j.message||j.output||'応答を取得できませんでした。'}else a=local(t)}catch(e){a='AIバックエンドに接続できませんでした。CONFIGから接続先を確認してください。'}msg('ai',a);S.busy=false;speak(a)}
+function setup(){let C=window.SpeechRecognition||window.webkitSpeechRecognition;if(!C)return null;let r=new C;r.lang='ja-JP';r.continuous=false;r.interimResults=true;r.onstart=()=>{S.listening=true;$('#mic').textContent='■';state('LISTENING','お話しください');visual()};r.onresult=e=>{let f='';for(let i=e.resultIndex;i<e.results.length;i++){let x=e.results[i][0].transcript;$('#preview').textContent=x;if(e.results[i].isFinal)f+=x}if(f)ask(f)};r.onerror=()=>{S.listening=false;$('#mic').textContent='●';state('STANDBY','マイクを確認してください')};r.onend=()=>{S.listening=false;$('#mic').textContent='●';if(!S.busy)state('STANDBY','「オレリー」と話しかけてください')};return r}S.rec=setup();
+function visual(){let c=$('#viz'),x=c.getContext('2d');function rs(){c.width=c.clientWidth*devicePixelRatio;c.height=c.clientHeight*devicePixelRatio}rs();addEventListener('resize',rs);function d(){let w=c.width,h=c.height;x.clearRect(0,0,w,h);x.beginPath();x.strokeStyle='#55e8ff';x.lineWidth=2*devicePixelRatio;for(let p=0;p<w;p+=4){let y=h/2+(S.listening||speechSynthesis.speaking?Math.sin(p/18+Date.now()/90)*13+Math.sin(p/7+Date.now()/140)*5:Math.sin(p/30+Date.now()/500)*2);p?x.lineTo(p,y):x.moveTo(p,y)}x.stroke();$('#core').style.transform=(S.listening||speechSynthesis.speaking)?`scale(${1+Math.sin(Date.now()/120)*.02})`:'scale(1)';requestAnimationFrame(d)}d()}
+$('#mic').onclick=()=>{if(!S.rec)return ask($('#preview').textContent);if(S.listening)S.rec.stop();else S.rec.start()};$('#send').onclick=()=>ask($('#preview').textContent);document.querySelectorAll('.quick button').forEach(b=>b.onclick=()=>ask(b.dataset.prompt));
+$('#config').onclick=()=>{$('#endpoint').value=S.endpoint;$('#settings').showModal()};$('#close').onclick=()=>$('#settings').close();$('#save').onclick=()=>{S.endpoint=$('#endpoint').value.trim();localStorage.setItem('orreryEndpoint',S.endpoint);$('#settings').close();msg('ai',S.endpoint?'AIバックエンドを設定しました。':'ローカル会話モードに戻しました。')};$('#clear').onclick=()=>{$('#messages').innerHTML='';msg('ai','会話をクリアしました。オンラインです。')};
+$('#network').textContent=navigator.onLine?'ONLINE':'OFFLINE';addEventListener('online',()=>$('#network').textContent='ONLINE');addEventListener('offline',()=>$('#network').textContent='OFFLINE');if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js?v=3'));

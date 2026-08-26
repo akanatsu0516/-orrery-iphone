@@ -175,7 +175,7 @@ export default {
 
         return json(
           {
-            error: "OPENAI_API_ERROR"
+            error: "OPENAI_API_ERROR",
             detail: data
           },
           502,

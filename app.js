@@ -490,16 +490,28 @@ async function ask(text) {
           }
         );
 
-      if (!response.ok) {
+      let data;
 
-        throw new Error(
-          `HTTP ${response.status}`
-        );
-      }
+try {
+  data = await response.json();
+} catch {
+  data = {};
+}
 
-      const data =
-        await response.json();
+if (!response.ok) {
 
+  console.error(
+    "WORKER ERROR:",
+    data
+  );
+
+  throw new Error(
+    data?.detail?.error?.message ||
+    data?.detail?.message ||
+    data?.error ||
+    `HTTP ${response.status}`
+  );
+}
       answer =
         data?.reply ||
         data?.output ||

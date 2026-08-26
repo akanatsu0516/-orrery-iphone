@@ -1,1 +1,92 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#020813"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><title>ORRERY V3</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon.svg"><link rel="stylesheet" href="style.css"></head><body><div id="app"><div class="stars"></div><header><div><strong id="clock">00:00:00</strong><small id="date"></small></div><div class="brand">ORRERY<small>iPHONE EDITION / V3</small><b id="systemState">SYSTEM ONLINE</b></div><div class="weather"><span id="weatherIcon">☼</span><strong id="temp">--°</strong><small id="weatherText">LOADING</small></div></header><section class="conversation"><div class="chathead">ORRERY AI <i>CONVERSATION MODE</i></div><div id="messages"><div class="bubble ai"><b>O</b><p><small>ORRERY</small>オンライン。お話しください。</p></div></div></section><section class="corestage"><div id="core"><div class="planet"></div><i class="ring r1"></i><i class="ring r2"></i><i class="ring r3"></i><i class="ring r4"></i><em class="sat s1"></em><em class="sat s2"></em><em class="sat s3"></em><span>O R R E R Y</span></div><div class="corestatus"><b id="listenLabel">STANDBY</b><small id="subLabel">「オレリー」と話しかけてください</small></div></section><section class="grid"><article><label>WEATHER / FUKUOKA</label><div class="big"><span id="wIcon">☼</span><b id="wTemp">--°</b><small id="wDesc">--</small></div><div class="row">HUMIDITY <b id="humidity">--%</b></div></article><article><label>MARKET / WATCH</label><div class="row">NIKKEI 225 <b>LIVE</b></div><div class="chart"></div><div class="row">USD / JPY <b>LIVE</b></div></article><article><label>SYSTEM STATUS</label><div class="row">NETWORK <b id="network">ONLINE</b></div><div class="row">DISPLAY <b>IPHONE</b></div><div class="row">MODE <b>ASSISTANT</b></div></article><article class="audio"><label>AUDIO REACTOR <b id="audioState">IDLE</b></label><canvas id="viz"></canvas></article></section><section class="quick"><button data-prompt="今日の福岡の天気を教えて">☼<small>WEATHER</small></button><button data-prompt="今の時間を教えて">◷<small>TIME</small></button><button data-prompt="今日の予定を教えて">▦<small>SCHEDULE</small></button><button data-prompt="ニュースを要約して">⌁<small>NEWS</small></button></section><section class="talk"><button id="mic">●</button><div><small>PRESS TO TALK</small><p id="preview">なんでも話してみてください</p></div><button id="send">↑</button></section><nav><button class="active">⌂<small>HOME</small></button><button id="clear">◌<small>CLEAR</small></button><button id="config">⚙<small>CONFIG</small></button></nav><dialog id="settings"><div class="dlg"><b>ORRERY CONFIG</b><button id="close">×</button></div><label>AI BACKEND URL</label><input id="endpoint" placeholder="https://your-server.example/api/chat"><small>APIキーはGitHub Pagesに置かず、あなたのバックエンドで管理します。</small><button id="save">SAVE</button></dialog></div><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#02060d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ORRERY // V3.1</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div class="gridfx"></div><div class="scan"></div>
+  <header class="topbar">
+    <div class="time"><strong id="clock">00:00</strong><small id="date">AUG 26 2026</small></div>
+    <div class="brand"><span>ORRERY</span><small>ARTIFICIAL INTELLIGENCE SYSTEM</small><b id="systemState">● ONLINE</b></div>
+    <div class="wx"><span id="weatherIcon">☼</span><strong id="temp">--°</strong><small id="weatherText">SYNC</small></div>
+  </header>
+
+  <div class="statusline"><span>CORE 01</span><i></i><span id="mode">STANDBY</span><i></i><span>SECURE LINK</span></div>
+
+  <section class="hud">
+    <aside class="side left">
+      <article class="module"><label>ENVIRONMENT</label><div class="metric"><span>FUKUOKA</span><b id="wTemp">--°</b></div><div class="sub"><span id="wDesc">CLEAR</span><b id="humidity">--%</b></div></article>
+      <article class="module"><label>SYSTEM</label><div class="metric"><span>NETWORK</span><b id="network">ONLINE</b></div><div class="metric"><span>DISPLAY</span><b>IPHONE</b></div><div class="metric"><span>VOICE</span><b id="voiceStatus">READY</b></div></article>
+      <article class="module mini"><label>MEMORY</label><div class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><small>LOCAL SESSION</small></article>
+    </aside>
+
+    <main class="corezone">
+      <div class="chat">
+        <div class="chatTitle"><b>ORRERY AI</b><span>LIVE CONVERSATION</span></div>
+        <div id="messages">
+          <div class="msg ai"><b>O</b><div><small>ORRERY</small><p>システムオンライン。<br>何をお手伝いしましょう？</p></div></div>
+        </div>
+      </div>
+
+      <div class="coreWrap">
+        <div id="core">
+          <div class="halo"></div><div class="planet"></div>
+          <i class="ring r1"></i><i class="ring r2"></i><i class="ring r3"></i><i class="ring r4"></i>
+          <i class="node n1"></i><i class="node n2"></i><i class="node n3"></i>
+          <span>O R R E R Y</span><em></em>
+        </div>
+        <div class="corelabel"><b id="listenLabel">STANDBY</b><small id="subLabel">PRESS TO TALK</small></div>
+      </div>
+    </main>
+
+    <aside class="side right">
+      <article class="module"><label>MARKET WATCH</label><div class="metric"><span>NIKKEI 225</span><b>LIVE</b></div><div class="spark"></div><div class="metric"><span>USD / JPY</span><b>LIVE</b></div></article>
+      <article class="module"><label>AI STATUS</label><div class="metric"><span>MODEL</span><b>GPT-5.6</b></div><div class="metric"><span>LINK</span><b id="aiLink">LOCAL</b></div><div class="metric"><span>VOICE</span><b>JA-JP</b></div></article>
+      <article class="module mini"><label>ACTIVITY</label><div class="activity"><i></i><i></i><i></i><i></i><i></i><i></i></div><small id="activityText">IDLE</small></article>
+    </aside>
+  </section>
+
+  <section class="reactor">
+    <div class="reactorHead"><span>AUDIO REACTOR</span><b id="audioState">IDLE</b></div>
+    <canvas id="viz"></canvas>
+  </section>
+
+  <section class="quick">
+    <button data-prompt="今の時間を教えて"><b>◷</b><span>TIME</span></button>
+    <button data-prompt="福岡の現在の天気を教えて"><b>☼</b><span>WEATHER</span></button>
+    <button data-prompt="今日のニュースを短く教えて"><b>⌁</b><span>NEWS</span></button>
+    <button data-prompt="自己紹介して"><b>◉</b><span>ORRERY</span></button>
+  </section>
+
+  <section class="talkbar">
+    <button id="mic" class="mic"><span>●</span></button>
+    <div><small id="talkState">PRESS TO TALK</small><p id="preview">オレリーに話しかけてください</p></div>
+    <button id="send" class="send">↑</button>
+  </section>
+
+  <nav class="dock">
+    <button class="active">⌂<small>CORE</small></button>
+    <button id="clear">◌<small>RESET</small></button>
+    <button id="config">⚙<small>LINK</small></button>
+  </nav>
+
+  <dialog id="settings">
+    <div class="dlg"><b>ORRERY / SECURE LINK</b><button id="close">×</button></div>
+    <label>AI BACKEND URL</label>
+    <input id="endpoint" placeholder="https://xxxx.workers.dev">
+    <p>Cloudflare WorkerなどのバックエンドURLをここに設定します。OpenAI APIキーはこのiPhoneやGitHubには保存しません。</p>
+    <button id="save">SAVE CONNECTION</button>
+  </dialog>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -24,3 +24,71 @@
 dialog{width:min(92vw,430px);background:#06111b;color:var(--white);border:1px solid var(--cyan);border-radius:15px;padding:16px}dialog::backdrop{background:rgba(0,0,0,.75);backdrop-filter:blur(4px)}.dlg{display:flex;justify-content:space-between}.dlg button{border:0;background:none;color:#fff;font-size:22px}dialog label{display:block;color:var(--muted);font-size:7px;letter-spacing:.16em;margin-top:18px}dialog input{width:100%;margin:8px 0;padding:11px;border:1px solid var(--line);border-radius:8px;background:#02070c;color:#fff}dialog p{font-size:8px;color:var(--muted);line-height:1.6}#save{width:100%;padding:11px;border:0;border-radius:8px;background:var(--cyan);font-weight:700}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{50%{box-shadow:0 0 35px rgba(92,234,255,.65)}}
 @media(max-width:650px){.topTime{font-size:34px}.hero{height:430px}.cards{gap:7px}.card{padding:10px}.systemGrid{grid-template-columns:1fr 1fr}.systemGrid div:nth-child(3){margin-top:5px}.systemGrid div:nth-child(4){margin-top:5px}.core{width:min(70vw,300px);height:min(70vw,300px)}}
+
+/* ORRERY V4 / ONE-SCREEN iPHONE COCKPIT */
+html,body{height:100%;min-height:100%;overflow:hidden}
+body{padding:env(safe-area-inset-top) 10px env(safe-area-inset-bottom)}
+#app{height:100dvh;min-height:0;max-width:680px;display:flex;flex-direction:column;overflow:hidden}
+main{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.topbar{flex:none;padding:4px 3px 5px}
+.topTime{font-size:34px}
+.microbar{flex:none;height:22px}
+.hero{flex:1;min-height:0;height:auto;display:flex;flex-direction:column}
+.heroLabel{flex:none;padding:4px 7px}
+.coreWrap{flex:1;min-height:0;height:auto}
+.core{width:min(54vw,270px);height:min(54vw,270px)}
+.outerOrbit.o1{width:78%;height:62%}
+.outerOrbit.o2{width:94%;height:52%}
+.coreState{bottom:1px}
+.coreState b{font-size:10px}
+.coreState small{font-size:6px;margin-top:3px}
+.cards{flex:none;grid-template-columns:1fr 1fr;gap:6px}
+.card{padding:8px;border-radius:9px;min-height:72px}
+.card header{font-size:6px}
+.weatherMain{margin-top:6px;gap:5px}
+.weatherMain span{font-size:15px}
+.weatherMain strong{font-size:24px}
+.weatherMain em{font-size:6px}
+.cardRow,.metricRow{font-size:6px;margin-top:5px}
+.spark{height:20px;margin:0}
+.system{grid-column:1/-1;min-height:58px}
+.systemGrid{grid-template-columns:repeat(4,1fr);gap:4px;margin-top:7px}
+.systemGrid div{padding-left:5px}
+.systemGrid span{font-size:5px}
+.systemGrid b{font-size:7px;margin-top:2px}
+.command{display:none}
+.reactor{flex:none;height:54px;margin-top:6px;padding:7px;border-radius:9px}
+.reactor header{font-size:6px}
+#viz{height:25px}
+.reactorLine{height:1px}
+.talkbar{flex:none;position:relative;bottom:auto;margin-top:6px;border-radius:13px;padding:6px;grid-template-columns:48px 1fr 38px}
+.mic{width:40px;height:40px}
+.send{height:34px}
+.dock{display:none}
+.quick{display:none}
+@media(max-height:780px){
+ .topTime{font-size:30px}
+ .heroLabel{padding:2px 6px}
+ .core{width:min(48vw,240px);height:min(48vw,240px)}
+ .coreWrap{min-height:190px}
+ .coreState b{font-size:9px}
+ .cards .card{min-height:66px}
+ .system{min-height:52px}
+ .reactor{height:47px}
+ .talkbar{margin-top:4px}
+}
+@media(max-height:700px){
+ .edition{font-size:6px}
+ .date{font-size:6px;margin-top:3px}
+ .topTime{font-size:27px}
+ .topRight strong{font-size:18px}
+ .microbar{height:18px}
+ .core{width:205px;height:205px}
+ .coreWrap{min-height:175px}
+ .coreState small{display:none}
+ .cards .card{min-height:58px}
+ .system{min-height:46px}
+ .systemGrid{margin-top:4px}
+ .reactor{display:none}
+ .talkbar{margin-top:3px}
+}

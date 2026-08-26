@@ -211,6 +211,7 @@ main {
   height: 58px;
   min-height: 58px;
   margin-top: 5px;
+  margin-bottom: 62px;
   padding: 6px;
   box-sizing: border-box;
   z-index: 100;
@@ -270,7 +271,8 @@ main {
   }
 
   .talkbar {
-    height: 54px;
-    min-height: 54px;
-  }
+  height: 54px;
+  min-height: 54px;
+  margin-bottom: 62px;
+}
 }

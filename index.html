@@ -20,8 +20,11 @@
     <div class="wx"><span id="weatherIcon">☼</span><strong id="temp">--°</strong><small id="weatherText">SYNC</small></div>
   </header>
 
-  <div class="statusline"><span>CORE 01</span><i></i><span id="mode">STANDBY</span><i></i><span>SECURE LINK</span></div>
+  <div class="statusline"><span>ORRERY OS</span><i></i><span>CORE ONLINE</span><i></i><span id="mode">STANDBY</span></div>
 
+  <div class="telemetry">
+    <span>NEURAL CORE <b>98%</b></span><span>VOICE LINK <b>READY</b></span><span>SECURITY <b>ACTIVE</b></span><span>LATENCY <b>12ms</b></span>
+  </div>
   <section class="hud">
     <aside class="side left">
       <article class="module"><label>ENVIRONMENT</label><div class="metric"><span>FUKUOKA</span><b id="wTemp">--°</b></div><div class="sub"><span id="wDesc">CLEAR</span><b id="humidity">--%</b></div></article>
@@ -30,13 +33,7 @@
     </aside>
 
     <main class="corezone">
-      <div class="chat">
-        <div class="chatTitle"><b>ORRERY AI</b><span>LIVE CONVERSATION</span></div>
-        <div id="messages">
-          <div class="msg ai"><b>O</b><div><small>ORRERY</small><p>システムオンライン。<br>何をお手伝いしましょう？</p></div></div>
-        </div>
-      </div>
-
+      <div class="jarvisHeader"><span>PERSONAL AI // ORRERY</span><b>CONNECTED</b></div>
       <div class="coreWrap">
         <div id="core">
           <div class="halo"></div><div class="planet"></div>
@@ -44,7 +41,13 @@
           <i class="node n1"></i><i class="node n2"></i><i class="node n3"></i>
           <span>O R R E R Y</span><em></em>
         </div>
-        <div class="corelabel"><b id="listenLabel">STANDBY</b><small id="subLabel">PRESS TO TALK</small></div>
+        <div class="corelabel"><b id="listenLabel">STANDBY</b><small id="subLabel">AWAITING COMMAND</small></div>
+      </div>
+      <div class="chat compact">
+        <div class="chatTitle"><b>COMMAND LOG</b><span>ORRERY AI</span></div>
+        <div id="messages">
+          <div class="msg ai"><b>O</b><div><small>ORRERY</small><p>システムオンライン。何をお手伝いしましょう？</p></div></div>
+        </div>
       </div>
     </main>
 

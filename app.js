@@ -975,3 +975,421 @@ state(
 );
 
 visual();
+/* =========================
+   ORRERY V4.2 VOICE FIX
+   ========================= */
+
+S.finalReceived = false;
+S.lastSpeechText = "";
+
+/* 音声認識をiPhone向けに再構成 */
+if (S.rec) {
+
+  S.rec.onstart = () => {
+
+    S.listening = true;
+    S.finalReceived = false;
+
+    $("#mic")?.classList.add("active");
+
+    state(
+      "LISTENING",
+      "お話しください"
+    );
+
+    preview("聞き取っています…");
+  };
+
+
+  S.rec.onresult = event => {
+
+    let text = "";
+
+    for (
+      let i = event.resultIndex;
+      i < event.results.length;
+      i++
+    ) {
+
+      const result = event.results[i];
+
+      if (result[0]) {
+        text += result[0].transcript;
+      }
+    }
+
+    text = text.trim();
+
+    if (!text) return;
+
+    preview(text);
+
+    const last =
+      event.results[event.results.length - 1];
+
+    if (last && last.isFinal) {
+
+      S.finalReceived = true;
+
+      const finalText = text;
+
+      state(
+        "PROCESSING",
+        "ORRERY IS THINKING"
+      );
+
+      /* 認識終了処理と競合しないよう少し待つ */
+      setTimeout(() => {
+
+        ask(finalText);
+
+      }, 180);
+    }
+  };
+
+
+  S.rec.onerror = event => {
+
+    console.log(
+      "ORRERY Speech Error:",
+      event.error
+    );
+
+    /*
+      iPhoneでは正常認識後に
+      aborted / no-speech が発生することがある。
+      確定済みならエラー扱いしない。
+    */
+    if (S.finalReceived) {
+      return;
+    }
+
+    S.listening = false;
+
+    $("#mic")
+      ?.classList
+      .remove("active");
+
+    let text =
+      "もう一度話しかけてください。";
+
+    if (event.error === "not-allowed") {
+      text =
+        "マイクの使用を許可してください。";
+    }
+
+    if (event.error === "network") {
+      text =
+        "音声認識の通信を確認してください。";
+    }
+
+    if (event.error === "no-speech") {
+      text =
+        "聞き取れませんでした。";
+    }
+
+    state(
+      "STANDBY",
+      text
+    );
+
+    preview(text);
+  };
+
+
+  S.rec.onend = () => {
+
+    S.listening = false;
+
+    $("#mic")
+      ?.classList
+      .remove("active");
+
+    /*
+      認識確定後はask()側に任せる。
+      ここでSTANDBYに戻して返答表示を
+      上書きしない。
+    */
+    if (!S.finalReceived && !S.busy) {
+
+      state(
+        "STANDBY",
+        "「オレリー」と話しかけてください"
+      );
+    }
+  };
+}
+
+
+/* =========================
+   V4.2 RESPONSE
+   ========================= */
+
+ask = async function(text) {
+
+  const t = String(text || "").trim();
+
+  if (!t || S.busy) return;
+
+  S.busy = true;
+
+  preview(t);
+
+  state(
+    "PROCESSING",
+    "ORRERY IS THINKING"
+  );
+
+  let answer = "";
+
+  try {
+
+    /*
+      まずローカル応答で確実にテスト。
+      AI Endpointが設定されていればそちらを使用。
+    */
+
+    if (S.endpoint) {
+
+      const response =
+        await fetch(
+          S.endpoint,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body: JSON.stringify({
+              message: t,
+              history:
+                S.history.slice(-12)
+            })
+          }
+        );
+
+      if (!response.ok) {
+        throw new Error(
+          "HTTP " + response.status
+        );
+      }
+
+      const data =
+        await response.json();
+
+      answer =
+        data.reply ||
+        data.output ||
+        data.message ||
+        "";
+
+      if (!answer) {
+        throw new Error(
+          "EMPTY_RESPONSE"
+        );
+      }
+
+    } else {
+
+      /* AI未接続でも必ず返答 */
+      if (
+        /こんにちは|こんにちわ/.test(t)
+      ) {
+
+        answer =
+          "こんにちは。ORRERYはオンラインです。";
+
+      } else if (
+        /名前|誰/.test(t)
+      ) {
+
+        answer =
+          "私はORRERY。あなたのiPhoneで動くAIアシスタントです。";
+
+      } else if (
+        /何時|時間/.test(t)
+      ) {
+
+        answer =
+          "現在時刻は" +
+          ($("#clock")?.textContent || "") +
+          "です。";
+
+      } else {
+
+        answer =
+          "聞こえています。ORRERYは正常に動作しています。";
+      }
+    }
+
+  } catch (error) {
+
+    console.error(
+      "ORRERY RESPONSE ERROR",
+      error
+    );
+
+    answer =
+      "AIとの通信に失敗しました。";
+  }
+
+
+  /* 会話履歴 */
+
+  S.history.push({
+    role: "user",
+    content: t
+  });
+
+  S.history.push({
+    role: "assistant",
+    content: answer
+  });
+
+
+  /* =========================
+     重要：返答を画面に表示
+     ========================= */
+
+  msg(
+    "user",
+    t
+  );
+
+  msg(
+    "ai",
+    answer
+  );
+
+  /*
+    TALK欄にも返答を表示
+  */
+
+  preview(answer);
+
+
+  /* =========================
+     音声出力
+     ========================= */
+
+  S.busy = false;
+
+  S.finalReceived = false;
+
+  state(
+    "SPEAKING",
+    "ORRERY IS SPEAKING"
+  );
+
+  speak(answer);
+};
+
+
+/* =========================
+   iPhone SPEECH OUTPUT
+   ========================= */
+
+speak = function(text) {
+
+  if (
+    !text ||
+    !("speechSynthesis" in window)
+  ) {
+
+    state(
+      "STANDBY",
+      "「オレリー」と話しかけてください"
+    );
+
+    return;
+  }
+
+
+  speechSynthesis.cancel();
+
+
+  const utterance =
+    new SpeechSynthesisUtterance(text);
+
+  utterance.lang =
+    "ja-JP";
+
+  utterance.rate =
+    0.95;
+
+  utterance.pitch =
+    1.0;
+
+  utterance.volume =
+    1.0;
+
+
+  const voices =
+    speechSynthesis.getVoices();
+
+
+  const japanese =
+    voices.find(
+      voice =>
+        voice.lang === "ja-JP"
+    ) ||
+    voices.find(
+      voice =>
+        voice.lang.startsWith("ja")
+    );
+
+
+  if (japanese) {
+    utterance.voice = japanese;
+  }
+
+
+  utterance.onstart = () => {
+
+    state(
+      "SPEAKING",
+      "ORRERY IS SPEAKING"
+    );
+  };
+
+
+  utterance.onend = () => {
+
+    state(
+      "STANDBY",
+      "「オレリー」と話しかけてください"
+    );
+
+    preview(
+      "オレリーに話しかけてください"
+    );
+  };
+
+
+  utterance.onerror = error => {
+
+    console.log(
+      "Speech synthesis error:",
+      error
+    );
+
+    state(
+      "STANDBY",
+      "音声出力を確認してください"
+    );
+  };
+
+
+  /*
+    iPhone Safari対策
+  */
+  setTimeout(() => {
+
+    speechSynthesis.speak(
+      utterance
+    );
+
+  }, 80);
+};

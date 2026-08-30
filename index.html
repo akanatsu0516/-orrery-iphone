@@ -3,108 +3,56 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#02060d">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>ORRERY // V3.1</title>
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#0b0d12">
+<title>APEX S30 // RP CALCULATOR</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="app">
-  <div class="stars"></div><div class="gridfx"></div><div class="scan"></div>
+<div class="bg"></div>
+<main>
+<header>
+  <div><span class="eyebrow">APEX LEGENDS / SEASON 30</span><h1>RP CALCULATOR</h1><p>試合結果を入れるだけ。盛れたか、溶けたか、一瞬で判定。</p></div>
+  <button id="share" class="ghost">↗ 共有</button>
+</header>
 
-  <header class="topbar">
-    <div class="topLeft">
-      <div class="edition">ORRERY / iPHONE EDITION <b>V4</b></div>
-      <div class="date" id="date">AUG 26, 2026</div>
-    </div>
-    <div class="topTime" id="clock">00:00</div>
-    <div class="topRight"><span id="weatherIcon">☼</span><strong id="temp">--°</strong><small id="weatherText">CLEAR</small></div>
-  </header>
+<section class="grid">
+<article class="panel inputs">
+<h2>MATCH DATA</h2>
+<label>ランク<select id="rank">
+<option value="rookie">ルーキー</option><option value="bronze">ブロンズ</option>
+<option value="silver">シルバー</option><option value="gold">ゴールド</option>
+<option value="platinum" selected>プラチナ</option><option value="diamond">ダイヤ</option>
+<option value="master">マスター</option><option value="pred">プレデター</option>
+</select></label>
+<label>順位<select id="placement"></select></label>
+<div class="two"><label>キル<input id="kills" type="number" min="0" max="30" value="0"></label><label>アシスト<input id="assists" type="number" min="0" max="30" value="0"></label></div>
+<div class="two"><label>参加<input id="parts" type="number" min="0" max="30" value="0"><small>チームキル参加</small></label>
+<label>TOP5連続<select id="streak"><option value="0">なし / 1回目</option><option value="10">2回目 +10</option><option value="20">3回目 +20</option><option value="30">4回目 +30</option><option value="40">5回目以降 +40</option></select></label></div>
+<label class="check"><input id="challenger" type="checkbox"> 自分より上位ティアの敵を倒した（簡易ボーナス）</label>
+<button id="calc" class="primary">CALCULATE RP</button>
+</article>
 
-  <div class="microbar">
-    <span>CORE <b>01</b></span><i></i><span id="mode">STANDBY</span><i></i><span>SECURE</span><span class="online">● ONLINE</span>
-  </div>
-
-  <main>
-    <section class="hero">
-      <div class="heroLabel"><span>PERSONAL AI SYSTEM</span><b id="systemState">● ONLINE</b></div>
-
-      <div class="coreWrap">
-        <div class="outerOrbit o1"></div><div class="outerOrbit o2"></div>
-        <div class="core" id="core">
-          <div class="glow"></div><div class="planet"></div>
-          <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="ring r4"></div>
-          <i class="sat s1"></i><i class="sat s2"></i><i class="sat s3"></i>
-          <div class="coreName">O R R E R Y</div>
-        </div>
-      </div>
-      <div class="coreState"><b id="listenLabel">STANDBY</b><small id="subLabel">「オレリー」と話しかけてください</small></div>
-    </section>
-
-    <section class="cards">
-      <article class="card weather">
-        <header><span>WEATHER / FUKUOKA</span><b>LIVE</b></header>
-        <div class="weatherMain"><span id="weatherIcon2">☼</span><strong id="wTemp">--°</strong><em id="wDesc">CLEAR</em></div>
-        <div class="cardRow"><span>HUMIDITY</span><b id="humidity">--%</b></div>
-      </article>
-
-      <article class="card market">
-        <header><span>MARKET / WATCH</span><b>LIVE</b></header>
-        <div class="metricRow"><span>NIKKEI 225</span><b>LIVE</b></div>
-        <div class="spark"><i></i><i></i></div>
-        <div class="metricRow"><span>USD / JPY</span><b>LIVE</b></div>
-      </article>
-
-      <article class="card system">
-        <header><span>SYSTEM</span><b>ONLINE</b></header>
-        <div class="systemGrid">
-          <div><span>BATTERY</span><b id="battery">--%</b></div>
-          <div><span>DISPLAY</span><b>IPHONE</b></div>
-          <div><span>NETWORK</span><b id="network">ONLINE</b></div>
-          <div><span>VOICE</span><b id="voiceStatus">READY</b></div>
-        </div>
-      </article>
-
-      <article class="card command">
-        <header><span>ORRERY AI / COMMAND LOG</span><b>LIVE</b></header>
-        <div id="messages">
-          <div class="msg ai"><b>O</b><div><small>ORRERY</small><p>システムオンライン。何をお手伝いしましょう？</p></div></div>
-        </div>
-      </article>
-    </section>
-
-    <section class="reactor">
-      <header><span>AUDIO REACTOR</span><b id="audioState">LIVE</b></header>
-      <canvas id="viz"></canvas>
-      <div class="reactorLine"></div>
-    </section>
-
-    
-
-    <section class="talkbar">
-      <button id="mic" class="mic"><span>●</span></button>
-      <div><small id="talkState">PRESS TO TALK</small><p id="preview">オレリーに話しかけてください</p></div>
-      <button id="send" class="send">↑</button>
-    </section>
-  </main>
-<nav class="dock" style="position:fixed;left:0;right:0;bottom:0;z-index:9999;padding-bottom:env(safe-area-inset-bottom);">
-    <button class="active">CORE<small>HOME</small></button>
-    <button id="clear">RESET<small>SESSION</small></button>
-    <button id="config">LINK<small>AI BACKEND</small></button>
-  </nav>
-  
-
-  <dialog id="settings">
-    <div class="dlg"><b>ORRERY / SECURE LINK</b><button id="close">×</button></div>
-    <label>AI BACKEND URL</label>
-    <input id="endpoint" placeholder="https://xxxx.workers.dev/api/chat">
-    <p>AI APIキーはiPhoneやGitHubには保存しません。バックエンド側のSecretで管理します。</p>
-    <button id="save">SAVE CONNECTION</button>
-  </dialog>
+<article class="panel result">
+<div class="resultTop"><span>RESULT</span><strong id="total">+0 RP</strong></div>
+<div id="verdict" class="verdict">試合結果を入力して計算</div>
+<div class="breakdown">
+<div><span>順位RP</span><b id="placeRP">+0</b></div>
+<div><span>撃破RP</span><b id="combatRP">+0</b></div>
+<div><span>ボーナス</span><b id="bonusRP">+0</b></div>
+<div><span>参加費</span><b id="entryRP">-48</b></div>
 </div>
+<div class="formula">順位 + 撃破/アシスト/参加 + ボーナス − 参加費</div>
+</article>
+</section>
+
+<section class="panel quick"><h2>PLACEMENT TABLE</h2><div id="table"></div></section>
+<section class="panel history">
+<div class="historyHead"><h2>SESSION</h2><button id="reset" class="ghost small">リセット</button></div>
+<div class="stats"><div><span>試合数</span><b id="games">0</b></div><div><span>合計RP</span><b id="sum">0</b></div><div><span>平均RP</span><b id="avg">0</b></div><div><span>最大RP</span><b id="best">0</b></div></div>
+<div id="log" class="log"><p>まだ試合データはありません。</p></div>
+</section>
+<footer>Season 30 calculator • ゲーム側のアップデートで計算ルールが変更される場合があります。</footer>
+</main>
 <script src="app.js"></script>
 </body>
 </html>
